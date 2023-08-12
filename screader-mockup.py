@@ -131,16 +131,17 @@ def setupCloseActions():
     chatWindow.protocol("WM_DELETE_WINDOW", toggleChatWindow)
 
 def main():
+    configureConfigWindow()
+    configureChatWindow()
+    setupCloseActions()
     updateWindows()
     chatWindow.geometry(f"600x400+{configWindow.winfo_x() + configWindow.winfo_width() + 20}+{configWindow.winfo_y()}")
     showGeometries()
+
+    logger.info("Starting main loop")
     while running:
         updateWindows()
 
 if __name__ == "__main__":
-    logger.info("Starting main loop")
-    configureConfigWindow()
-    configureChatWindow()
-    setupCloseActions()
     main()
     configWindow.quit()
