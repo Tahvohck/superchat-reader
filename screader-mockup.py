@@ -8,7 +8,6 @@ __version__ = (0,1,0)
 ## Initial window setup
 configWindow = tkinter.Tk()
 chatWindow = tkinter.Toplevel(configWindow)
-configWindow.focus_force()
 
 ####################
 ## State Variables
