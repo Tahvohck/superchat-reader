@@ -122,9 +122,7 @@ addChatMessage(master=chatWindow, username="Long Post", content="Lorem ipsum dol
 
 def updateWindows():
     try:
-        configWindow.update_idletasks()
         configWindow.update()
-        chatWindow.update_idletasks()
         chatWindow.update()
     except:
         logger.warning("Failed to update windows (this is normal while quitting the program)")
