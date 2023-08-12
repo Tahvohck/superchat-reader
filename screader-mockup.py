@@ -4,7 +4,15 @@ import logging
 
 __version__ = (0,1,0)
 
+####################
+## Initial window setup
+configWindow = tkinter.Tk()
+chatWindow = tkinter.Toplevel(configWindow)
+
+####################
+## State Variables
 running = True
+chatWindowShown = tkinter.BooleanVar(master=configWindow, value=True, name="chatWindowShown")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -16,21 +24,19 @@ consoleHandler.setFormatter(logging.Formatter(
 )
 logger.addHandler(consoleHandler)
 
-configWindow = tkinter.Tk()
-chatWindow = tkinter.Tk()
-configWindow.focus_force()
-
-chatWindowShown = True
 def toggleChatWindow ():
-    global chatWindowShown
-    if chatWindow.state() == 'normal':
+    # when this function is called, it will be called with the DESIRED state,
+    # not the CURRENT state set in `chatwindowshown`
+    if not chatWindowShown.get():
         chatWindow.withdraw()
-        chatWindowShown = False
-    elif chatWindow.state() == 'withdrawn':
+    else:
         chatWindow.deiconify()
         configWindow.focus_force()
-        chatWindowShown = True
-    logger.debug(chatWindow.state())
+    logger.debug("CWS: " + str(configWindow.getboolean(configWindow.getvar("chatWindowShown"))))
+    logger.debug("New CW State: " + chatWindow.state())
+
+def closeChatWindow():
+    menuView.invoke("Show Chat Messages")
 
 def showGeometries():
     logger.info("config Window " + configWindow.geometry())
@@ -59,13 +65,9 @@ def addChatMessage(master:tkinter.Widget=None, amount:str="$0.00", username:str=
     frameMessage.pack(expand=False, anchor=tkinter.W)
 
 
-configWindow.title(f"Superchat Reader v{__version__[0]}.{__version__[1]}")
-configWindow.wm_grid(widthInc=400,heightInc=40)
-
 ##################
 ## Menu Bar Setup
 menuMain = tkinter.Menu(master=configWindow)
-configWindow.config(menu=menuMain)
 
 menuFile = tkinter.Menu(master=menuMain, tearoff=0)
 menuMain.add_cascade(label="File", menu=menuFile)
@@ -90,55 +92,61 @@ menuMain.add_cascade(label="Connect", menu=menuConnect)
 
 ##################
 ## Config Window Setup
-frameAccounts = ttk.Frame(master=configWindow)
-frameAccounts.grid(column=0,row=0,rowspan=40)
+def configureConfigWindow():
+    configWindow.title(f"Superchat Reader v{__version__[0]}.{__version__[1]}")
+    configWindow.wm_grid(widthInc=400,heightInc=40)
+    configWindow.config(menu=menuMain)
+    frameAccounts = ttk.Frame(master=configWindow)
+    frameAccounts.grid(column=0,row=0,rowspan=40)
 
-ttk.Label(master=frameAccounts, text="YT Account 1").pack()
-ttk.Label(master=frameAccounts, text="YT Account 2").pack()
-ttk.Label(master=frameAccounts, text="Stream Elements Account 1").pack()
-ttk.Label(master=frameAccounts, text="Stream Labs Account 1").pack()
-ttk.Button(master=frameAccounts, text="+ Add Account").pack()
+    ttk.Label(master=frameAccounts, text="YT Account 1").pack()
+    ttk.Label(master=frameAccounts, text="YT Account 2").pack()
+    ttk.Label(master=frameAccounts, text="Stream Elements Account 1").pack()
+    ttk.Label(master=frameAccounts, text="Stream Labs Account 1").pack()
+    ttk.Button(master=frameAccounts, text="+ Add Account").pack()
 
-frameStreams = ttk.Frame(configWindow)
-frameStreams.grid(column=1,row=0)
+    frameStreams = ttk.Frame(configWindow)
+    frameStreams.grid(column=1,row=0)
 
-ttk.Label(master=frameStreams, text="Video 1").pack()
-ttk.Label(master=frameStreams, text="Video 2").pack()
-ttk.Label(master=frameStreams, text="Video 3 mbik1dnv5T8").pack()
-ttk.Button(master=frameStreams, text="Refresh Videos").pack()
+    ttk.Label(master=frameStreams, text="Video 1").pack()
+    ttk.Label(master=frameStreams, text="Video 2").pack()
+    ttk.Label(master=frameStreams, text="Video 3 mbik1dnv5T8").pack()
+    ttk.Button(master=frameStreams, text="Refresh Videos").pack()
 
 
 ##################
 ## Chat Window Setup
-chatWindow.title("Messages")
-addChatMessage(master=chatWindow, content="Message 1")
-addChatMessage(master=chatWindow, content="Message 2")
-addChatMessage(master=chatWindow, username="Very long username like damn bro calm down its too long", content="Message 3")
-addChatMessage(master=chatWindow, username="Long Post", content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor`n incididunt ut labore et dolore magna aliqua. Gravida dictum fusce ut placerat orci. Nunc consequat interdum varius sit amet. Placerat vestibulum lectus mauris ultrices eros in cursus. Viverra mauris in aliquam sem fringilla ut morbi tincidunt augue. Tempus quam pellentesque nec nam. Adipiscing vitae proin sagittis nisl rhoncus mattis rhoncus urna. Platea dictumst vestibulum rhoncus est. Sit amet risus nullam eget felis eget. Tortor id aliquet lectus proin nibh nisl condimentum id. Vitae elementum curabitur vitae nunc sed velit dignissim. Tristique senectus et netus et. Velit laoreet id donec ultrices tincidunt arcu non. Commodo quis imperdiet massa tincidunt nunc pulvinar sapien et. Diam sollicitudin tempor id eu nisl.")
-#ttk.Label(master=chatWindow,text="Message 1").pack()
-#ttk.Label(master=chatWindow,text="Message 2").pack()
-#ttk.Label(master=chatWindow,text="Message 3").pack()
-#ttk.Label(master=chatWindow,text="Message 4").pack()
+def configureChatWindow():
+    chatWindow.wm_transient(configWindow)
+    chatWindow.title("Messages")
+    addChatMessage(master=chatWindow, content="Message 1")
+    addChatMessage(master=chatWindow, content="Message 2")
+    addChatMessage(master=chatWindow, username="Very long username like damn bro calm down its too long", content="Message 3")
+    addChatMessage(master=chatWindow, username="Long Post", content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor`n incididunt ut labore et dolore magna aliqua. Gravida dictum fusce ut placerat orci. Nunc consequat interdum varius sit amet. Placerat vestibulum lectus mauris ultrices eros in cursus. Viverra mauris in aliquam sem fringilla ut morbi tincidunt augue. Tempus quam pellentesque nec nam. Adipiscing vitae proin sagittis nisl rhoncus mattis rhoncus urna. Platea dictumst vestibulum rhoncus est. Sit amet risus nullam eget felis eget. Tortor id aliquet lectus proin nibh nisl condimentum id. Vitae elementum curabitur vitae nunc sed velit dignissim. Tristique senectus et netus et. Velit laoreet id donec ultrices tincidunt arcu non. Commodo quis imperdiet massa tincidunt nunc pulvinar sapien et. Diam sollicitudin tempor id eu nisl.")
 
 def updateWindows():
     try:
-        configWindow.update_idletasks()
         configWindow.update()
-        chatWindow.update_idletasks()
         chatWindow.update()
     except:
         logger.warning("Failed to update windows (this is normal while quitting the program)")
 
-configWindow.protocol("WM_DELETE_WINDOW", stopMainLoop)
-chatWindow.protocol("WM_DELETE_WINDOW", toggleChatWindow)
+def setupCloseActions():
+    configWindow.protocol("WM_DELETE_WINDOW", stopMainLoop)
+    chatWindow.protocol("WM_DELETE_WINDOW", closeChatWindow)
 
-updateWindows()
-chatWindow.geometry(f"600x400+{configWindow.winfo_x() + configWindow.winfo_width() + 20}+{configWindow.winfo_y()}")
-showGeometries()
-
-logger.info("Starting main loop")
-
-while running:
+def main():
+    configureConfigWindow()
+    configureChatWindow()
+    setupCloseActions()
     updateWindows()
+    chatWindow.geometry(f"600x400+{configWindow.winfo_x() + configWindow.winfo_width() + 20}+{configWindow.winfo_y()}")
+    showGeometries()
 
-configWindow.quit()
+    logger.info("Starting main loop")
+    while running:
+        updateWindows()
+
+if __name__ == "__main__":
+    main()
+    configWindow.quit()
