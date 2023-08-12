@@ -1,6 +1,7 @@
 import tkinter
 import tkinter.ttk as ttk
 import logging
+import signal
 
 __version__ = (0,1,0)
 
@@ -47,6 +48,10 @@ def stopMainLoop():
     global running
     logger.info("Shutdown")
     running = False
+
+def stopMainLoopFromCtrlC(signal, frame):
+    logger.info("Ctrl-C caught, shutting down.")
+    stopMainLoop()
 
 
 def addChatMessage(master:tkinter.Widget=None, amount:str="$0.00", username:str="Unknown User", content=None):
@@ -148,5 +153,6 @@ def main():
         updateWindows()
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, stopMainLoopFromCtrlC)
     main()
     configWindow.quit()
