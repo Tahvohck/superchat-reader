@@ -4,7 +4,16 @@ import logging
 
 __version__ = (0,1,0)
 
+####################
+## Initial window setup
+configWindow = tkinter.Tk()
+chatWindow = tkinter.Toplevel(configWindow)
+configWindow.focus_force()
+
+####################
+## State Variables
 running = True
+chatWindowShown = tkinter.BooleanVar(master=configWindow, value=True, name="chatWindowShown")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -16,21 +25,19 @@ consoleHandler.setFormatter(logging.Formatter(
 )
 logger.addHandler(consoleHandler)
 
-configWindow = tkinter.Tk()
-chatWindow = tkinter.Tk()
-configWindow.focus_force()
-
-chatWindowShown = True
 def toggleChatWindow ():
-    global chatWindowShown
-    if chatWindow.state() == 'normal':
+    # when this function is called, it will be called with the DESIRED state,
+    # not the CURRENT state set in `chatwindowshown`
+    if not chatWindowShown.get():
         chatWindow.withdraw()
-        chatWindowShown = False
-    elif chatWindow.state() == 'withdrawn':
+    else:
         chatWindow.deiconify()
         configWindow.focus_force()
-        chatWindowShown = True
-    logger.debug(chatWindow.state())
+    logger.debug("CWS: " + str(configWindow.getboolean(configWindow.getvar("chatWindowShown"))))
+    logger.debug("New CW State: " + chatWindow.state())
+
+def closeChatWindow():
+    menuView.invoke("Show Chat Messages")
 
 def showGeometries():
     logger.info("config Window " + configWindow.geometry())
@@ -127,7 +134,7 @@ def updateWindows():
 
 def setupCloseActions():
     configWindow.protocol("WM_DELETE_WINDOW", stopMainLoop)
-    chatWindow.protocol("WM_DELETE_WINDOW", toggleChatWindow)
+    chatWindow.protocol("WM_DELETE_WINDOW", closeChatWindow)
 
 def main():
     configureConfigWindow()
