@@ -127,16 +127,19 @@ def updateWindows():
     except:
         logger.warning("Failed to update windows (this is normal while quitting the program)")
 
-configWindow.protocol("WM_DELETE_WINDOW", stopMainLoop)
-chatWindow.protocol("WM_DELETE_WINDOW", toggleChatWindow)
+def setupCloseActions():
+    configWindow.protocol("WM_DELETE_WINDOW", stopMainLoop)
+    chatWindow.protocol("WM_DELETE_WINDOW", toggleChatWindow)
 
-updateWindows()
-chatWindow.geometry(f"600x400+{configWindow.winfo_x() + configWindow.winfo_width() + 20}+{configWindow.winfo_y()}")
-showGeometries()
-
-logger.info("Starting main loop")
-
-while running:
+def main():
     updateWindows()
+    chatWindow.geometry(f"600x400+{configWindow.winfo_x() + configWindow.winfo_width() + 20}+{configWindow.winfo_y()}")
+    showGeometries()
+    while running:
+        updateWindows()
 
-configWindow.quit()
+if __name__ == "__main__":
+    logger.info("Starting main loop")
+    setupCloseActions()
+    main()
+    configWindow.quit()
