@@ -59,13 +59,9 @@ def addChatMessage(master:tkinter.Widget=None, amount:str="$0.00", username:str=
     frameMessage.pack(expand=False, anchor=tkinter.W)
 
 
-configWindow.title(f"Superchat Reader v{__version__[0]}.{__version__[1]}")
-configWindow.wm_grid(widthInc=400,heightInc=40)
-
 ##################
 ## Menu Bar Setup
 menuMain = tkinter.Menu(master=configWindow)
-configWindow.config(menu=menuMain)
 
 menuFile = tkinter.Menu(master=menuMain, tearoff=0)
 menuMain.add_cascade(label="File", menu=menuFile)
@@ -91,6 +87,9 @@ menuMain.add_cascade(label="Connect", menu=menuConnect)
 ##################
 ## Config Window Setup
 def configureConfigWindow():
+    configWindow.title(f"Superchat Reader v{__version__[0]}.{__version__[1]}")
+    configWindow.wm_grid(widthInc=400,heightInc=40)
+    configWindow.config(menu=menuMain)
     frameAccounts = ttk.Frame(master=configWindow)
     frameAccounts.grid(column=0,row=0,rowspan=40)
 
