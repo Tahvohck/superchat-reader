@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "currency-codes": "^2.2.0"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "emitDeclarationOnly": true,
+        "declaration": true,
+        "moduleResolution": "node",
+        "outFile": "dist/SuperchatReader.d.ts",
+        "allowImportingTsExtensions": true,
+        "paths": {
+            "@/*": ["./*"]
+        },
+        "baseUrl": "./src",
+        "module": "ESNext",
+        "target": "es2022"
+    }
+}
