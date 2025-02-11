@@ -4,16 +4,12 @@ import { LocallyCachedImage } from '@/ImageCache.ts';
 export interface IDonationProvider {
     readonly name: string;
     readonly version: string;
-    /**
-     * Activate the provider. Return value indicates success.
-     */
+    /** Activate the provider. Return value indicates success. */
     activate(): boolean;
-    /**
-     * Deactivate the provider. Return value indicates success.
-     */
+    /** Deactivate the provider. Return value indicates success. */
     deactivate(): boolean;
     /**
-     * Wait for new messages from the provider.
+     * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
     process(): AsyncGenerator<DonationMessage>;
     configure(): void;
