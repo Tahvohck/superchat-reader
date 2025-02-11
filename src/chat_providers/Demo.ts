@@ -1,5 +1,6 @@
 import { DonationMessage, IDonationProvider } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
+import generateWords from '@biegomar/lorem';
 
 export class DemoProvider implements IDonationProvider {
     readonly name = 'Demo Provider';
@@ -11,6 +12,10 @@ export class DemoProvider implements IDonationProvider {
 
     activate(): boolean {
         this.active = true;
+        console.log(
+            `Username: ${DemoConfig.demoUsername}\n` +
+            `Will generate between ${DemoConfig.minWords} and ${DemoConfig.maxWords} words.`
+        )
         console.log('Demo provider activated');
         return true;
     }
@@ -35,6 +40,12 @@ export class DemoProvider implements IDonationProvider {
             message.donationAmount = Math.floor(message.donationAmount);
             message.donationAmount /= 10 ** message.donationCurrency.digits;
 
+            message.author = DemoConfig.demoUsername;
+            message.message = generateWords(
+                DemoConfig.minWords +
+                    ~~(Math.random() * (DemoConfig.maxWords - DemoConfig.minWords)),
+            );
+
             yield message;
         }
     }
@@ -42,4 +53,10 @@ export class DemoProvider implements IDonationProvider {
     configure(): void {
         throw new Error('Method not implemented.');
     }
+}
+
+class DemoConfig {
+    static demoUsername = 'Demo User';
+    static minWords = 5;
+    static maxWords = 25;
 }
