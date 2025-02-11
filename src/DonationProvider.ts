@@ -16,7 +16,7 @@ export interface IDonationProvider {
 }
 
 export class DonationMessage {
-    message = 'Placeholder message';
+    message: string | LocallyCachedImage = 'Placeholder message';
     messageType: 'text' | 'image' = 'text';
     donationAmount = 0;
     donationCurrency = code('USD')!;
