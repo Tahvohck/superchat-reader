@@ -10,12 +10,14 @@ export class DemoProvider implements IDonationProvider {
     active = false;
     delay = 1000;
 
+    config = new DemoConfig();
+
     activate(): boolean {
-        this.active = true;
         console.log(
-            `Username: ${DemoConfig.demoUsername}\n` +
-            `Will generate between ${DemoConfig.minWords} and ${DemoConfig.maxWords} words.`
-        )
+            `Username: ${this.config.demoUsername}\n` +
+                `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
+        );
+        this.active = true;
         console.log('Demo provider activated');
         return true;
     }
@@ -40,10 +42,10 @@ export class DemoProvider implements IDonationProvider {
             message.donationAmount = Math.floor(message.donationAmount);
             message.donationAmount /= 10 ** message.donationCurrency.digits;
 
-            message.author = DemoConfig.demoUsername;
+            message.author = this.config.demoUsername;
             message.message = generateWords(
-                DemoConfig.minWords +
-                    ~~(Math.random() * (DemoConfig.maxWords - DemoConfig.minWords)),
+                this.config.minWords +
+                    ~~(Math.random() * (this.config.maxWords - this.config.minWords)),
             );
 
             yield message;
@@ -56,7 +58,7 @@ export class DemoProvider implements IDonationProvider {
 }
 
 class DemoConfig {
-    static demoUsername = 'Demo User';
-    static minWords = 5;
-    static maxWords = 25;
+    demoUsername = 'Demo User';
+    minWords = 5;
+    maxWords = 25;
 }
