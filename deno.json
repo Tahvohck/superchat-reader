@@ -1,8 +1,8 @@
 {
     "imports": {
+        "@/": "./src/",
         "@biegomar/lorem": "jsr:@biegomar/lorem@^0.1.1",
         "@std/assert": "jsr:@std/assert@^1.0.11",
-        "@/": "./src/",
         "@std/crypto": "jsr:@std/crypto@^1.0.4",
         "@std/fs": "jsr:@std/fs@^1.0.11",
         "@std/path": "jsr:@std/path@^1.0.8",
