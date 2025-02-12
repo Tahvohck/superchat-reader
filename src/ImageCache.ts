@@ -17,7 +17,7 @@ export class LocallyCachedImage {
         const [type, subtype] = img.headers.get('content-type')!.split('/');
 
         if (type != 'image') {
-            throw new Error('File is not an image! Refusing to download');
+            throw new Deno.errors.InvalidData('File is not an image! Refusing to download');
         }
         await Deno.mkdir(this.cacheLocation, { recursive: true });
 
