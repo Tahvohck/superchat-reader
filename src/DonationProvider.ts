@@ -13,7 +13,7 @@ export interface DonationProvider {
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
     process(): AsyncGenerator<DonationMessage>;
-    configure(): void;
+    configure(cb: ConfigurationBuilder): ConfigurationBuilder;
 }
 
 export interface DonationMessage {
@@ -111,5 +111,19 @@ export class ProviderConfig {
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             return new constructor(savePath);
         }
+    }
+}
+export class ConfigurationBuilder {
+    addCheckbox(label: string, callback: (newValue: boolean) => void) {
+        throw new Error('Not Implemented');
+    }
+    addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
+        throw new Error('Not Implemented');
+    }
+    addTextBox(label: string, callback: (newValue: string) => void) {
+        throw new Error('Not Implemented');
+    }
+    addButton(label: string, callback: () => void) {
+        throw new Error('Not Implemented');
     }
 }
