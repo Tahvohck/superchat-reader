@@ -1,4 +1,4 @@
-import { code } from 'currency-codes';
+import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 
 export interface IDonationProvider {
@@ -15,22 +15,22 @@ export interface IDonationProvider {
     configure(): void;
 }
 
-export class DonationMessage {
-    message: string | LocallyCachedImage = 'Placeholder message';
-    messageType: 'text' | 'image' = 'text';
-    donationAmount = 0;
-    donationCurrency = code('USD')!;
-    donationClass = DonationClass.Blue;
-    author = 'Sample Donator'; // Visible username
+export interface DonationMessage {
+    message: string | LocallyCachedImage;
+    messageType: 'text' | 'image';
+    donationAmount: number;
+    donationCurrency: CurrencyCodeRecord;
+    donationClass: DonationClass;
+    author: string; // Visible username
     authorID?: string; // If provided by platform
     authorAvatar?: LocallyCachedImage; // reference to on-disk cache instead of storing multiple times
+}
 
-    toString(): string {
-        let str = `${this.author}: ${this.donationAmount} ${this.donationCurrency.currency}`;
-        str += '\n';
-        str += `${this.message}`;
-        return str;
-    }
+export function donationMessageToString(dm: DonationMessage) {
+    let str = `${dm.author}: ${dm.donationAmount} ${dm.donationCurrency.currency}`;
+    str += '\n';
+    str += `${dm.message}`;
+    return str;
 }
 
 export enum DonationClass {
