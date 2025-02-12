@@ -7,7 +7,7 @@ export class LocallyCachedImage {
     static readonly cacheLocation = path.join(Deno.cwd(), 'filecache');
 
     /** Save a remote file to the local disk and return the local cache information */
-    static async SaveNew(img: Response): Promise<LocallyCachedImage> {
+    static async saveNew(img: Response): Promise<LocallyCachedImage> {
         if (!img.ok) {
             throw new Error('Server returned error: ' + img.status);
         }
@@ -54,6 +54,6 @@ export class LocallyCachedImage {
 
 if (import.meta.main) {
     const foo = await fetch('https://upload.wikimedia.org/wikipedia/en/1/1e/Baseball_%28crop%29.jpg');
-    const lci = await LocallyCachedImage.SaveNew(foo);
+    const lci = await LocallyCachedImage.saveNew(foo);
     console.log(lci);
 }
