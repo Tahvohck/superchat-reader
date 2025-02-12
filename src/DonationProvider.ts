@@ -1,14 +1,15 @@
 import { code } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { join } from '@std/path/join';
+import { Awaitable } from '@/util.ts';
 
-export interface IDonationProvider {
+export interface DonationProvider {
     readonly name: string;
     readonly version: string;
     /** Activate the provider. Return value indicates success. */
-    activate(): boolean;
+    activate(): Awaitable<boolean>;
     /** Deactivate the provider. Return value indicates success. */
-    deactivate(): boolean;
+    deactivate(): Awaitable<boolean>;
     /**
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */

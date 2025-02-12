@@ -1,8 +1,8 @@
-import { DonationMessage, IDonationProvider } from '@/DonationProvider.ts';
+import { DonationMessage, DonationProvider } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
 
-export class DemoProvider implements IDonationProvider {
+export class DemoProvider implements DonationProvider {
     readonly name = 'Demo Provider';
     readonly version = '1.0';
 
