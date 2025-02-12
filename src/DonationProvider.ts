@@ -5,9 +5,9 @@ export interface IDonationProvider {
     readonly name: string;
     readonly version: string;
     /** Activate the provider. Return value indicates success. */
-    activate(): boolean;
+    activate(): Promise<boolean>;
     /** Deactivate the provider. Return value indicates success. */
-    deactivate(): boolean;
+    deactivate(): Promise<boolean>;
     /**
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
