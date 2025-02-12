@@ -1,5 +1,6 @@
 import * as path from '@std/path';
 import { crypto } from '@std/crypto';
+import { expandGlob } from '@std/fs';
 
 export class LocallyCachedImage {
     /** Local file name. Most likely hash of the file contents, SHA-1 */
@@ -41,7 +42,7 @@ export class LocallyCachedImage {
             });
         } catch {
             // File already exists, don't write to it.
-            return localcache;
+            return LocallyCachedImage.hydrate(digestStr);
         }
 
         await saveStream.pipeTo(tempfile.writable);
@@ -49,6 +50,18 @@ export class LocallyCachedImage {
         localcache.localFileName = cachefileName;
         //throw new Error("Not yet implented");
         return localcache;
+    }
+
+    static async hydrate(hash: string): Promise<LocallyCachedImage> {
+        const cachedImage = new LocallyCachedImage();
+        const cacheFileGlob = path.join(this.cacheLocation, hash) + '*';
+        const matches = await Array.fromAsync(expandGlob(cacheFileGlob));
+        if (matches.length == 0) {
+            throw new Deno.errors.NotFound('Could not rehydrate from local cache ' + hash);
+        }
+        cachedImage.localFileName = matches[0].path;
+
+        return cachedImage;
     }
 }
 
