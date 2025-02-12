@@ -66,7 +66,35 @@ export class LocallyCachedImage {
 }
 
 if (import.meta.main) {
-    const foo = await fetch('https://upload.wikimedia.org/wikipedia/en/1/1e/Baseball_%28crop%29.jpg');
-    const lci = await LocallyCachedImage.saveNew(foo);
-    console.log(lci);
+    const saveNewTests = [
+        'https://httpbin.org/image/png',    // various types of image
+        'https://httpbin.org/image/jpeg',   // various types of image
+        'https://httpbin.org/image/svg',    // various types of image
+        'https://httpbin.org/image/webp',   // various types of image
+        'https://httpbin.org',              // Not an image
+        'https://httpbin.org/status/404',   // Not a 200 OK response
+    ];
+    const hydrateTests: string[] = [
+        'DEADBEFF'
+    ]
+
+    for (const url of saveNewTests) {
+        try {
+            const lci = await LocallyCachedImage.saveNew(await fetch(url));
+            hydrateTests.push(path.basename(lci.localFileName))
+            console.log(lci);
+        } catch (e) {
+            console.log((e as Error).message);
+        }
+    }
+
+    for (const filename of hydrateTests) {
+        try {
+            const lci = await LocallyCachedImage.hydrate(filename);
+            console.log(lci);
+            await Deno.remove(lci.localFileName)
+        } catch (e) {
+            console.log((e as Error).message);
+        }
+    }
 }
