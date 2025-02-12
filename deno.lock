@@ -1,0 +1,72 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@biegomar/lorem@~0.1.1": "0.1.1",
+    "jsr:@std/assert@^1.0.11": "1.0.11",
+    "jsr:@std/crypto@^1.0.4": "1.0.4",
+    "jsr:@std/fs@^1.0.11": "1.0.11",
+    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "jsr:@std/path@^1.0.8": "1.0.8",
+    "npm:currency-codes@^2.2.0": "2.2.0",
+    "npm:react@19": "19.0.0"
+  },
+  "jsr": {
+    "@biegomar/lorem@0.1.1": {
+      "integrity": "c6049dedbf7620ed5ffd85a56e3dd013e2e0493014b290d1f6eda68669c97fce"
+    },
+    "@std/assert@1.0.11": {
+      "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/crypto@1.0.4": {
+      "integrity": "cee245c453bd5366207f4d8aa25ea3e9c86cecad2be3fefcaa6cb17203d79340"
+    },
+    "@std/fs@1.0.11": {
+      "integrity": "ba674672693340c5ebdd018b4fe1af46cb08741f42b4c538154e97d217b55bdd",
+      "dependencies": [
+        "jsr:@std/path"
+      ]
+    },
+    "@std/internal@1.0.5": {
+      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
+    },
+    "@std/path@1.0.8": {
+      "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    }
+  },
+  "npm": {
+    "currency-codes@2.2.0": {
+      "integrity": "sha512-vpbQc5sEYHGdTVAYUhHnKv0DWiYLRvzl/KKyqeHzBh7HD/j3UlWoScpZ9tN/jG6w2feddWoObsBbaNVu5yDapg==",
+      "dependencies": [
+        "first-match",
+        "nub"
+      ]
+    },
+    "first-match@0.0.1": {
+      "integrity": "sha512-VvKbnaxrC0polTFDC+teKPTdl2mn6B/KUW+WB3C9RzKDeNwbzfLdnUz3FxC+tnjvus6bI0jWrWicQyVIPdS37A=="
+    },
+    "nub@0.0.0": {
+      "integrity": "sha512-dK0Ss9C34R/vV0FfYJXuqDAqHlaW9fvWVufq9MmGF2umCuDbd5GRfRD9fpi/LiM0l4ZXf8IBB+RYmZExqCrf0w=="
+    },
+    "react@19.0.0": {
+      "integrity": "sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@biegomar/lorem@~0.1.1",
+      "jsr:@std/assert@^1.0.11",
+      "jsr:@std/crypto@^1.0.4",
+      "jsr:@std/fs@^1.0.11",
+      "jsr:@std/path@^1.0.8",
+      "npm:react@19"
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:currency-codes@^2.2.0"
+      ]
+    }
+  }
+}
