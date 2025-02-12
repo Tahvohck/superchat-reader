@@ -7,9 +7,9 @@ export interface DonationProvider {
     readonly name: string;
     readonly version: string;
     /** Activate the provider. Return value indicates success. */
-    activate(): Awaitable<boolean>;
+    activate(): Promise<boolean>;
     /** Deactivate the provider. Return value indicates success. */
-    deactivate(): Awaitable<boolean>;
+    deactivate(): Promise<boolean>;
     /**
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */

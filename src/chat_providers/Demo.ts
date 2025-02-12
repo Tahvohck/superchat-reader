@@ -13,20 +13,20 @@ export class DemoProvider implements DonationProvider {
 
     config = new DemoConfig();
 
-    async activate(): Promise<boolean> {
+    activate() {
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
         );
         this.active = true;
         console.log('Demo provider activated');
-        return true;
+        return Promise.resolve(true);
     }
 
-    async deactivate(): Promise<boolean> {
+    deactivate() {
         this.active = false;
         console.log('Demo provider deactivated');
-        return true;
+        return Promise.resolve(true);
     }
 
     async *process() {
