@@ -1,6 +1,7 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { join } from '@std/path/join';
+import { Awaitable } from '@/util.ts';
 
 export interface DonationProvider {
     readonly name: string;
@@ -9,6 +10,7 @@ export interface DonationProvider {
     activate(): Promise<boolean>;
     /** Deactivate the provider. Return value indicates success. */
     deactivate(): Promise<boolean>;
+
     /**
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
