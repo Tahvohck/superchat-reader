@@ -1,7 +1,6 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { join } from '@std/path/join';
-import { Awaitable } from '@/util.ts';
 
 export interface DonationProvider {
     readonly name: string;
