@@ -24,7 +24,7 @@ export class YouTubeDonationProvider implements DonationProvider  {
         }
     }
 
-    deactivate(): boolean {
+    async deactivate(): Promise<boolean> {
         return true;
     }
 
@@ -42,7 +42,8 @@ export class YouTubeDonationProvider implements DonationProvider  {
     }
 
     private toDonationMessage(_message: unknown): DonationMessage {
-        return new DonationMessage();
+        // TODO
+        return {} as DonationMessage;
     }
 
     configure(): void {
