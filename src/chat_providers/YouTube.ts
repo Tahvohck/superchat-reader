@@ -1,7 +1,6 @@
 import { DonationMessage, DonationProvider, ProviderConfig } from '@/DonationProvider.ts';
 // this is temporary while I finish up chat support in youtube.js before I push it to npm - Eats
-import { ScrapingClient } from "https://raw.githubusercontent.com/Mampfinator/youtube.js/chat-scraper/src/scraping/ScrapingClient.ts";
-import { ChatClient } from "https://raw.githubusercontent.com/Mampfinator/youtube.js/chat-scraper/src/scraping/ChatClient.ts";
+import { ScrapingClient } from "youtube.js";
 
 export class YouTubeDonationProvider implements DonationProvider  {
     name = "YouTube";
