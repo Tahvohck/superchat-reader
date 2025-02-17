@@ -23,7 +23,9 @@
         "exclude": [
             ".vscode/",
             "node_modules/",
-            "dist/"
+            "dist/",
+            "deno.lock",
+            "deno.json"
         ],
         "indentWidth": 4,
         "lineWidth": 120,
