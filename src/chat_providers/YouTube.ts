@@ -1,5 +1,4 @@
 import { DonationClass, DonationMessage, DonationProvider, ProviderConfig } from '@/DonationProvider.ts';
-// this is temporary while I finish up chat support in youtube.js before I push it to npm - Eats
 import { ScrapingClient } from "youtube.js";
 import { ChatMessage, MessageType } from "youtube.js/dist/scraping/ChatClient.js";
 import { LocallyCachedImage } from '@/ImageCache.ts';
@@ -90,6 +89,7 @@ export class YouTubeDonationProvider implements DonationProvider  {
                     throw new Error("SHIT FUCK SHIT SHIT FUCK");
                 }
                 donationMessage.donationCurrency = code(currencyCode);
+                // temporarily set to blue while we figure out details of `DonationClass`
                 donationMessage.donationClass = DonationClass.Blue;
                 break;
             }
@@ -99,6 +99,7 @@ export class YouTubeDonationProvider implements DonationProvider  {
                 // FIXME: youtube.js doesn't support donation amounts for stickers yet. This is an oversight and will be fixed soon:tm:.
                 donationMessage.donationAmount = 0;
                 donationMessage.donationCurrency = code("USD");
+                // temporarily set to blue while we figure out details of `DonationClass`
                 donationMessage.donationClass = DonationClass.Blue;
                 break;
             }
