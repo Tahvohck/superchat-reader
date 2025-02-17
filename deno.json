@@ -7,7 +7,8 @@
         "@std/fs": "jsr:@std/fs@^1.0.11",
         "@std/path": "jsr:@std/path@^1.0.8",
         "react": "npm:react@^19.0.0",
-        "youtube.js": "npm:@sireatsalot/youtube.js@^0.0.4"
+        "youtube.js": "npm:@sireatsalot/youtube.js@^0.0.4",
+        "currency-symbol-map": "npm:currency-symbol-map"
     },
     "tasks": {
     },
