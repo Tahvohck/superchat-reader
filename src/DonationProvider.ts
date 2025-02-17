@@ -114,6 +114,8 @@ export class ProviderConfig {
     }
 }
 export class ConfigurationBuilder {
+    private elements: ConfigElement[] = []
+
     addCheckbox(label: string, callback: (newValue: boolean) => void) {
         throw new Error('Not Implemented');
     }
@@ -126,4 +128,33 @@ export class ConfigurationBuilder {
     addButton(label: string, callback: () => void) {
         throw new Error('Not Implemented');
     }
+
+
+    build(): string {
+        throw new Error('Not Implemented');
+    }
+}
+
+interface ConfigElement {
+    type: "base" | string
+}
+
+export interface ConfigCheckbox extends ConfigElement {
+    type: "checkbox"
+}
+
+export interface ConfigSlider extends ConfigElement {
+    type: "slider"
+    min: number
+    max: number
+}
+
+export interface ConfigTextBox extends ConfigElement {
+    type: "checkbox"
+    text: string | number
+}
+
+export interface ConfigButton extends ConfigElement {
+    type: "button"
+    callback: () => void
 }
