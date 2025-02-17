@@ -131,30 +131,73 @@ export class ConfigurationBuilder {
 
 
     build(): string {
-        throw new Error('Not Implemented');
+        let content = "<div>"
+        for (const elem of this.elements) {
+            content += elem.render()
+        }
+        content += "</div>"
+
+        return content
     }
 }
 
 interface ConfigElement {
-    type: "base" | string
+    type: ConfigTypes
+    render(): string
 }
 
-export interface ConfigCheckbox extends ConfigElement {
-    type: "checkbox"
+export class ConfigCheckbox implements ConfigElement {
+    type = ConfigTypes.checkbox
+    render(): string {
+        throw new Error('Not Implemented');
+    }
 }
 
-export interface ConfigSlider extends ConfigElement {
-    type: "slider"
+export class ConfigSlider implements ConfigElement {
+    type = ConfigTypes.slider
     min: number
     max: number
+
+    constructor(min: number, max: number) {
+        this.min = min
+        this.max = max
+    }
+
+    render(): string {
+        throw new Error('Not Implemented');
+    }
 }
 
-export interface ConfigTextBox extends ConfigElement {
-    type: "checkbox"
+export class ConfigTextBox implements ConfigElement {
+    type = ConfigTypes.textbox
     text: string | number
+    label: string
+    constructor(label: string, text: string | number) {
+        this.label = label
+        this.text = text
+    }
+
+    render(): string {
+        throw new Error('Not Implemented');
+    }
 }
 
-export interface ConfigButton extends ConfigElement {
-    type: "button"
+export class ConfigButton implements ConfigElement {
+    type = ConfigTypes.button
     callback: () => void
+
+    constructor(callback: () => void) {
+        this.callback = callback
+    }
+
+    render(): string {
+        throw new Error('Not Implemented');
+    }
+}
+
+enum ConfigTypes {
+    checkbox    = "checkbox",
+    slider      = "slider",
+    textbox     = "textbox",
+    button      = "button"
 }
