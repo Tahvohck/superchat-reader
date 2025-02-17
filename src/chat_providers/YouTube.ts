@@ -1,15 +1,15 @@
 import { DonationClass, DonationMessage, DonationProvider, ProviderConfig } from '@/DonationProvider.ts';
-import { ScrapingClient } from "youtube.js";
-import { ChatMessage, MessageType } from "youtube.js/dist/scraping/ChatClient.js";
+import { ScrapingClient } from 'youtube.js';
+import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { code } from 'currency-codes';
-import currencyCodeMap from "currency-symbol-map/map.js"
+import currencyCodeMap from 'currency-symbol-map/map.js';
 
 const reverseCurrencyCodeMap = Object.fromEntries(Object.entries(currencyCodeMap).map(([key, value]) => [value, key]));
 
-export class YouTubeDonationProvider implements DonationProvider  {
-    name = "YouTube";
-    version = "0.0.1";
+export class YouTubeDonationProvider implements DonationProvider {
+    name = 'YouTube';
+    version = '0.0.1';
 
     private readonly client: ScrapingClient;
     private config!: YouTubeConfig;
@@ -23,10 +23,10 @@ export class YouTubeDonationProvider implements DonationProvider  {
     constructor() {
         this.client = new ScrapingClient();
     }
-    
+
     async activate(): Promise<boolean> {
         try {
-            this.config = await ProviderConfig.load("youtube.json", YouTubeConfig);
+            this.config = await ProviderConfig.load('youtube.json', YouTubeConfig);
             await this.client.init();
 
             this.shouldStop = false;
@@ -49,7 +49,7 @@ export class YouTubeDonationProvider implements DonationProvider  {
 
     async *process(): AsyncGenerator<DonationMessage> {
         if (!this.config.streamId) {
-            throw new Error("Stream ID not set.");
+            throw new Error('Stream ID not set.');
         }
 
         const chat = await this.client.chat(this.config.streamId!);
@@ -72,21 +72,21 @@ export class YouTubeDonationProvider implements DonationProvider  {
 
         switch (message.type) {
             case MessageType.Membership: {
-                donationMessage.message = message.message?.simpleText ?? "";
-                donationMessage.messageType = "text";
+                donationMessage.message = message.message?.simpleText ?? '';
+                donationMessage.messageType = 'text';
                 donationMessage.donationAmount = 0;
-                donationMessage.donationCurrency = code("USD")!;
+                donationMessage.donationCurrency = code('USD')!;
                 donationMessage.donationClass = DonationClass.Green;
                 break;
             }
             case MessageType.SuperChat: {
-                donationMessage.message = message.message?.simpleText ?? "";
-                donationMessage.messageType = "text";
+                donationMessage.message = message.message?.simpleText ?? '';
+                donationMessage.messageType = 'text';
                 donationMessage.donationAmount = message.amount;
 
                 const currencyCode = reverseCurrencyCodeMap[message.currency];
                 if (!currencyCode) {
-                    throw new Error("SHIT FUCK SHIT SHIT FUCK");
+                    throw new Error('SHIT FUCK SHIT SHIT FUCK');
                 }
                 donationMessage.donationCurrency = code(currencyCode);
                 // temporarily set to blue while we figure out details of `DonationClass`
@@ -95,10 +95,10 @@ export class YouTubeDonationProvider implements DonationProvider  {
             }
             case MessageType.SuperSticker: {
                 donationMessage.message = await LocallyCachedImage.saveNew(await fetch(message.sticker));
-                donationMessage.messageType = "image";
+                donationMessage.messageType = 'image';
                 // FIXME: youtube.js doesn't support donation amounts for stickers yet. This is an oversight and will be fixed soon:tm:.
                 donationMessage.donationAmount = 0;
-                donationMessage.donationCurrency = code("USD");
+                donationMessage.donationCurrency = code('USD');
                 // temporarily set to blue while we figure out details of `DonationClass`
                 donationMessage.donationClass = DonationClass.Blue;
                 break;

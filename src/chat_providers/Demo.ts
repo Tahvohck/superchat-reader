@@ -1,4 +1,4 @@
-import { DonationClass, DonationMessage, DonationProvider} from '@/DonationProvider.ts';
+import { DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
@@ -38,12 +38,12 @@ export class DemoProvider implements DonationProvider {
             const message: DonationMessage = {
                 author: this.config.demoUsername,
                 message: generateWords(
-                    this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords))
+                    this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords)),
                 ),
                 donationClass: DonationClass.Blue,
                 donationCurrency: code('USD')!, // USD currency exists, this will never be undefined
                 donationAmount: 0,
-                messageType: 'text'
+                messageType: 'text',
             };
 
             // Generate a random amount and truncate it to the correct digit count

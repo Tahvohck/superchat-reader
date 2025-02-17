@@ -1,7 +1,6 @@
 import { DemoProvider } from '@/chat_providers/Demo.ts';
 import { donationMessageToString } from '@/DonationProvider.ts';
 
-
 const prov = new DemoProvider();
 prov.activate();
 setTimeout(() => {
