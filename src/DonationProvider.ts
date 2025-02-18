@@ -143,7 +143,9 @@ export class ConfigurationBuilder {
 
 interface ConfigElement {
     type: ConfigTypes
+    label: string
     render(): string
+    callback(...args: unknown[]): unknown;
 }
 
 enum ConfigTypes {
