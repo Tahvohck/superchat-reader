@@ -9,10 +9,10 @@ const   currency_conversion_api = 'https://open.er-api.com/v6/latest/USD';
 
 if (import.meta.main) {
     await loadCCCache()
-    const php = convert(1, code('USD'), code('PHP'))
-    const usdToArs = convert(1, code('USD'), code('ARS'))
-    const phpToYen = convert(100, code('PHP'), code('JPY'))
-    const yenToUSD = convert(100, code('JPY'))
+    const php = convertCurrency(1, code('USD'), code('PHP'))
+    const usdToArs = convertCurrency(1, code('USD'), code('ARS'))
+    const phpToYen = convertCurrency(100, code('PHP'), code('JPY'))
+    const yenToUSD = convertCurrency(100, code('JPY'))
     console.log(`  1 USD is ${php} PHP`)
     console.log(`  1 USD is ${usdToArs} ARS`)
     console.log(`100 PHP is ${phpToYen} JPY`)
@@ -43,7 +43,7 @@ export async function loadCCCache() {
  * @param to Destination currency CodeRecord (default USD)
  * @returns The converted amount
  */
-export function convert(
+export function convertCurrency(
     amount: number, from?: CurrencyCodeRecord, to: CurrencyCodeRecord = code('USD')!
 ): number {
     if (!currency_conversion_cache) { 
