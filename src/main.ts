@@ -15,6 +15,7 @@ try {
 }
 
 // Load the cache. If the cache is out of date, redownload it.
+// TODO: This needs to be attributed per TOS <a href="https://www.exchangerate-api.com">Rates By Exchange Rate API</a>
 currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename));
 if (new Date(currency_conversion_cache.time_next_update_utc) < new Date()) {
     console.log('Currency cache out of date. Updating.');
