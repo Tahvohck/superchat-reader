@@ -113,6 +113,8 @@ export class ProviderConfig {
         }
     }
 }
+
+//TODO: Probably this is complex enough that it should be moved to its own file
 export class ConfigurationBuilder {
     private elements: ConfigElement[] = [];
 
