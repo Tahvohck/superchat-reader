@@ -11,7 +11,7 @@ export interface CurrencyAPIResponse {
     base_code: string;
     rates: Rates;
 }
-export interface Rates {
+interface Rates {
     USD: number;
     AED: number;
     AFN: number;
