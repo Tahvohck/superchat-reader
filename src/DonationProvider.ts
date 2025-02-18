@@ -146,6 +146,13 @@ interface ConfigElement {
     render(): string
 }
 
+enum ConfigTypes {
+    checkbox    = "checkbox",
+    slider      = "slider",
+    textbox     = "textbox",
+    button      = "button"
+}
+
 export class ConfigCheckbox implements ConfigElement {
     type = ConfigTypes.checkbox
     render(): string {
@@ -193,11 +200,4 @@ export class ConfigButton implements ConfigElement {
     render(): string {
         throw new Error('Not Implemented');
     }
-}
-
-enum ConfigTypes {
-    checkbox    = "checkbox",
-    slider      = "slider",
-    textbox     = "textbox",
-    button      = "button"
 }
