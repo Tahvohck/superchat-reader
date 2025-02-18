@@ -10,8 +10,8 @@ export interface CurrencyAPIResponse {
     time_eol_unix: number;
     base_code: string;
     rates: Rates;
-  }
-  export interface Rates {
+}
+export interface Rates {
     USD: number;
     AED: number;
     AFN: number;
@@ -174,5 +174,4 @@ export interface CurrencyAPIResponse {
     ZAR: number;
     ZMW: number;
     ZWL: number;
-  }
-  
+}

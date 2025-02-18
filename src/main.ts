@@ -1,29 +1,28 @@
 import { DemoProvider } from '@/chat_providers/Demo.ts';
 import { donationMessageToString } from '@/DonationProvider.ts';
 import { CurrencyAPIResponse } from '@/currency_cache.ts';
-import * as path from '@std/path'
+import * as path from '@std/path';
 
 let currency_conversion_cache: CurrencyAPIResponse;
-const currency_conversion_cache_filename = path.join(Deno.cwd(), "filecache", "currency_cache.json");
-const currency_conversion_api = "https://open.er-api.com/v6/latest/USD"
+const currency_conversion_cache_filename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
+const currency_conversion_api = 'https://open.er-api.com/v6/latest/USD';
 try {
-    // Try to open the file. 
-    Deno.openSync(currency_conversion_cache_filename).close()
+    // Try to open the file.
+    Deno.openSync(currency_conversion_cache_filename).close();
 } catch {
     // File doesn't exist, download it.
-    await update_currency_cache()
+    await update_currency_cache();
 }
 
 // Load the cache. If the cache is out of date, redownload it.
-currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename))
+currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename));
 if (new Date(currency_conversion_cache.time_next_update_utc) < new Date()) {
-    console.log("Currency cache out of date. Updating.")
-    await update_currency_cache()
-    currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename))
+    console.log('Currency cache out of date. Updating.');
+    await update_currency_cache();
+    currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename));
 }
 
-console.log(`1 USD is ${1 * currency_conversion_cache.rates.PHP} PHP`)
-
+console.log(`1 USD is ${1 * currency_conversion_cache.rates.PHP} PHP`);
 
 const prov = new DemoProvider();
 prov.activate();
@@ -41,11 +40,11 @@ async function update_currency_cache() {
     await Deno.mkdir(path.dirname(currency_conversion_cache_filename), { recursive: true });
     using file = await Deno.open(currency_conversion_cache_filename, {
         create: true,
-        write: true
-    })
-    const resp = await fetch(currency_conversion_api)
+        write: true,
+    });
+    const resp = await fetch(currency_conversion_api);
     if (resp.status != 200) {
-        throw new Deno.errors.NotFound("Could not connect to currency conversion API")
+        throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
-    await resp.body!.pipeTo(file.writable)
+    await resp.body!.pipeTo(file.writable);
 }
