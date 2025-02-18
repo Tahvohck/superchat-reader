@@ -122,14 +122,12 @@ export class ConfigurationBuilder {
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
         this.elements.push(new ConfigSlider(label, min, max, callback))
     }
-    addTextBox<T extends string | number>(
+    addTextBox<T extends string | number> (
         label: string, defaultVal: T,
         callback: (newValue: T) => void,
-        validate: (vewValue: T) => T)
-    {
-        this.elements.push(
-            new ConfigTextBox(label, defaultVal, callback, validate)
-        )
+        validate: (vewValue: T) => T
+    ) {
+        this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate))
     }
     addButton(label: string, callback: () => void) {
         this.elements.push(new ConfigButton(label, callback))
