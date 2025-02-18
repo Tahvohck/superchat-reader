@@ -117,7 +117,7 @@ export class ConfigurationBuilder {
     private elements: ConfigElement[] = []
 
     addCheckbox(label: string, callback: (newValue: boolean) => void) {
-        throw new Error('Not Implemented');
+        this.elements.push(new ConfigCheckbox(label, callback))
     }
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
         this.elements.push(new ConfigSlider(label, min, max, callback))
@@ -163,6 +163,14 @@ enum ConfigTypes {
 
 export class ConfigCheckbox implements ConfigElement {
     type = ConfigTypes.checkbox
+    label
+    callback: (newVal: boolean) => void
+
+    constructor(label: string, callback: (newValue: boolean) => void) {
+        this.label = label
+        this.callback = callback
+    }
+
     render(): string {
         throw new Error('Not Implemented');
     }
