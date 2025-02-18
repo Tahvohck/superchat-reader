@@ -122,8 +122,14 @@ export class ConfigurationBuilder {
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
         this.elements.push(new ConfigSlider(label, min, max, callback))
     }
-    addTextBox(label: string, callback: (newValue: string) => void) {
-        throw new Error('Not Implemented');
+    addTextBox<T extends string | number>(
+        label: string, defaultVal: T,
+        callback: (newValue: T) => void,
+        validate: (vewValue: T) => T)
+    {
+        this.elements.push(
+            new ConfigTextBox(label, defaultVal, callback, validate)
+        )
     }
     addButton(label: string, callback: () => void) {
         throw new Error('Not Implemented');
@@ -184,13 +190,18 @@ export class ConfigSlider implements ConfigElement {
     }
 }
 
-export class ConfigTextBox implements ConfigElement {
+export class ConfigTextBox<T extends string | number> implements ConfigElement {
     type = ConfigTypes.textbox
-    text: string | number
-    label: string
-    constructor(label: string, text: string | number) {
+    label;
+    value: T
+    callback: (newVal: T) => void
+    validate: (newVal: T) => T
+
+    constructor(label: string, defaultVal: T, onChange: (newValue: T) => void, validate: (newValue: T) => T) {
         this.label = label
-        this.text = text
+        this.value = defaultVal
+        this.callback = onChange
+        this.validate = validate
     }
 
     render(): string {
