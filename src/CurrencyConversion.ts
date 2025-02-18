@@ -1,6 +1,6 @@
 import * as path from '@std/path';
 import { code } from 'currency-codes';
-import { CurrencyCodeRecord } from 'currency-codes';
+import type { CurrencyCodeRecord } from 'currency-codes';
 let     currency_conversion_cache: CurrencyAPIResponse
 const   currency_conversion_cache_filename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
 const   currency_conversion_api = 'https://open.er-api.com/v6/latest/USD';
