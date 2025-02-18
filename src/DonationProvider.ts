@@ -120,7 +120,7 @@ export class ConfigurationBuilder {
         throw new Error('Not Implemented');
     }
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
-        throw new Error('Not Implemented');
+        this.elements.push(new ConfigSlider(label, min, max, callback))
     }
     addTextBox(label: string, callback: (newValue: string) => void) {
         throw new Error('Not Implemented');
@@ -164,12 +164,19 @@ export class ConfigCheckbox implements ConfigElement {
 
 export class ConfigSlider implements ConfigElement {
     type = ConfigTypes.slider
+    label
     min: number
     max: number
+    callback: (newVal: number) => void
 
-    constructor(min: number, max: number) {
+    constructor(label: string, min: number, max: number, onchange: (newValue: number) => void) {
+        if (min >= max) {
+            throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
+        }
+        this.label = label
         this.min = min
         this.max = max
+        this.callback = onchange;
     }
 
     render(): string {
