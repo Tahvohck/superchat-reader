@@ -1,6 +1,6 @@
 import { DemoProvider } from '@/chat_providers/Demo.ts';
 import { donationMessageToString } from '@/DonationProvider.ts';
-import { convert, loadCCCache } from '@/currency_cache.ts';
+import { convert, loadCCCache } from '@/CurrencyConversion.ts';
 import { code } from 'currency-codes';
 
 await loadCCCache()
