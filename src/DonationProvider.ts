@@ -116,12 +116,34 @@ export class ProviderConfig {
 export class ConfigurationBuilder {
     private elements: ConfigElement[] = [];
 
+    /**
+     * Adds a checkbox to the configuration panel.
+     * @param label The text to display next to the checkbox
+     * @param callback A function to be called when the value changes
+     */
     addCheckbox(label: string, callback: (newValue: boolean) => void) {
         this.elements.push(new ConfigCheckbox(label, callback));
     }
+
+    /**
+     * Add a slider with min and max values to the configuration panel
+     * @param label The text to display next to the slider
+     * @param min Minimum value
+     * @param max Maximum value
+     * @param callback The function to call when the value changes
+     */
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
         this.elements.push(new ConfigSlider(label, min, max, callback));
     }
+
+    /**
+     * Add a textboxt to the configuration panel, where the user can input any text
+     * TODO: Probably make validate just a regex
+     * @param label The text to display next to the textbox
+     * @param defaultVal The default value of the textbox
+     * @param callback The function to call when the value changes, after validation
+     * @param validate The function to call when the value changes, to validate the new value
+     */
     addTextBox<T extends string | number>(
         label: string,
         defaultVal: T,
@@ -130,10 +152,20 @@ export class ConfigurationBuilder {
     ) {
         this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate));
     }
+
+    /**
+     * Add a clickable button to the configuration panel
+     * @param label The text to display on the button
+     * @param callback The function to call when the button is clicked
+     */
     addButton(label: string, callback: () => void) {
         this.elements.push(new ConfigButton(label, callback));
     }
 
+    /**
+     * Build the configuration panel for display
+     * @returns An HTML string for rendering
+     */
     build(): string {
         let content = '<div>';
         for (const elem of this.elements) {
@@ -145,13 +177,19 @@ export class ConfigurationBuilder {
     }
 }
 
+/** Items that all elements in the configuration panel share */
 interface ConfigElement {
+    /** Element type */
     type: ConfigTypes;
+    /** Element label, typically displayed next to the element */
     readonly label: string;
+    /** Render the element to HTML */
     render(): string;
+    /** Function to be called when the element is interacted with */
     callback(...args: unknown[]): void;
 }
 
+/** Possible types of configuration elements */
 enum ConfigTypes {
     checkbox = 'checkbox',
     slider = 'slider',
@@ -159,6 +197,7 @@ enum ConfigTypes {
     button = 'button',
 }
 
+/** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox implements ConfigElement {
     type = ConfigTypes.checkbox;
     label;
@@ -174,6 +213,7 @@ export class ConfigCheckbox implements ConfigElement {
     }
 }
 
+/** Dynamically handled slider for configuration */
 export class ConfigSlider implements ConfigElement {
     type = ConfigTypes.slider;
     label;
@@ -196,6 +236,7 @@ export class ConfigSlider implements ConfigElement {
     }
 }
 
+/** Dynamically handled textbox for configuration */
 export class ConfigTextBox<T extends string | number> implements ConfigElement {
     type = ConfigTypes.textbox;
     label;
@@ -215,6 +256,7 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
     }
 }
 
+/** Dynamically handled button for configuration */
 export class ConfigButton implements ConfigElement {
     type = ConfigTypes.button;
     label;
