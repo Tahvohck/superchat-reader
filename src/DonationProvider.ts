@@ -132,7 +132,7 @@ export class ConfigurationBuilder {
         )
     }
     addButton(label: string, callback: () => void) {
-        throw new Error('Not Implemented');
+        this.elements.push(new ConfigButton(label, callback))
     }
 
 
@@ -219,13 +219,15 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
 
 export class ConfigButton implements ConfigElement {
     type = ConfigTypes.button
+    label
     callback: () => void
 
-    constructor(callback: () => void) {
+    constructor(label: string, callback: () => void) {
+        this.label = label
         this.callback = callback
     }
 
     render(): string {
-        throw new Error('Not Implemented');
+        return `<button onclick="${this.label}_onClick()">${this.label}</button>`
     }
 }
