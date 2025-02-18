@@ -18,7 +18,11 @@ try {
 currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename));
 if (new Date(currency_conversion_cache.time_next_update_utc) < new Date()) {
     console.log('Currency cache out of date. Updating.');
-    await update_currency_cache();
+    try {
+        await update_currency_cache();
+    } catch {
+        console.warn("Cache update failed. Will try to use stale data if possible.")
+    }
     currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename));
 }
 
@@ -43,6 +47,10 @@ async function update_currency_cache() {
         write: true,
     });
     const resp = await fetch(currency_conversion_api);
+    if (resp.status == 429) {
+        console.error("Too many requests to conversion API. Wait 20 minutes and try again.")
+        throw new Deno.errors.ConnectionRefused("Too many requests to currency conversion API (how?)")
+    }
     if (resp.status != 200) {
         throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
