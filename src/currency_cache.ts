@@ -1,4 +1,114 @@
-export interface CurrencyAPIResponse {
+import * as path from '@std/path';
+import { code } from 'currency-codes';
+import { CurrencyCodeRecord } from 'currency-codes';
+let     currency_conversion_cache: CurrencyAPIResponse
+const   currency_conversion_cache_filename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
+const   currency_conversion_api = 'https://open.er-api.com/v6/latest/USD';
+// TODO: This needs to be attributed per TOS <a href="https://www.exchangerate-api.com">Rates By Exchange Rate API</a>
+// The attribution is present in the console, but will need to be present in the GUI once present as well.
+
+if (import.meta.main) {
+    await loadCCCache()
+    const php = convert(1, code('USD'), code('PHP'))
+    const usdToArs = convert(1, code('USD'), code('ARS'))
+    const phpToYen = convert(100, code('PHP'), code('JPY'))
+    const yenToUSD = convert(100, code('JPY'))
+    console.log(`  1 USD is ${php} PHP`)
+    console.log(`  1 USD is ${usdToArs} ARS`)
+    console.log(`100 PHP is ${phpToYen} JPY`)
+    console.log(`100 JPY is ${yenToUSD} USD`)
+}
+
+
+/**
+ * Loads the currency conversion cache from disk if available. If not, loads it from the API.
+ * If the cache is out of date, updates it.
+ */
+export async function loadCCCache() {
+    if (!await isAvailable()) { await update_currency_cache() }
+    console.log("Rates By Exchange Rate API: https://www.exchangerate-api.com")
+    currency_conversion_cache = JSON.parse(await Deno.readTextFile(currency_conversion_cache_filename));
+    // Return early if not out of date
+    if (!isOutOfDate()) { return }
+    // otherwise update the cache and reload it
+    console.log("CC Cache out of date, reloading.")
+    await update_currency_cache()
+    currency_conversion_cache = JSON.parse(await Deno.readTextFile(currency_conversion_cache_filename));
+}
+
+/**
+ * Convert input currency amount from one currency to another.
+ * @param amount Source currency amount
+ * @param from Source currency CodeRecord
+ * @param to Destination currency CodeRecord (default USD)
+ * @returns The converted amount
+ */
+export function convert(
+    amount: number, from?: CurrencyCodeRecord, to: CurrencyCodeRecord = code('USD')!
+): number {
+    if (!currency_conversion_cache) { 
+        throw new Deno.errors.BadResource("Currency cache has not yet been initialized.")
+    }
+    if (!from || !to) {
+        throw new Deno.errors.InvalidData("Currency Code must be valid, not undefined")
+    }
+
+    const factor = 10 ** to.digits
+
+    const toUSD =   currency_conversion_cache.rates[from.code]
+    const fromUSD = currency_conversion_cache.rates[to.code]
+    // Double check that we got the rates. Both use ISO 4217 so we should be fine, but it might happen.
+    if (!toUSD || !fromUSD) {
+        throw new Deno.errors.InvalidData(`Either From [${from.code}] or To [${to.code}] currency is invalid in cache`)
+    }
+
+    // Conversion works by converting to USD and then to the target currency, since the cache is in terms of ratios to
+    // USD (to avoid pulling a bunch of hits against the API)
+    amount /= toUSD
+    amount *= fromUSD
+    // use Math.floor because conversions are gonna take money, not give extra
+    amount = Math.floor(amount * factor) /  factor
+    return amount
+}
+
+/** Checks if the cache is out of date. */
+function isOutOfDate(): boolean {
+    if (!currency_conversion_cache) {
+        throw new Deno.errors.BadResource("Currency Cache was never loaded.")
+    }
+    return new Date() > new Date(currency_conversion_cache.time_next_update_utc)
+}
+
+/** Checks if the cache file is present. */
+async function isAvailable(): Promise<boolean> {
+    try {
+        await Deno.lstat(currency_conversion_cache_filename)
+        return true
+    } catch {
+        return false
+    }
+}
+
+/** Update the currency cache json from Exchange Rate API  */
+async function update_currency_cache() {
+    await Deno.mkdir(path.dirname(currency_conversion_cache_filename), { recursive: true });
+    const resp = await fetch(currency_conversion_api);
+    if (resp.status == 429) {
+        console.error("Too many requests to conversion API. Wait 20 minutes and try again.")
+        throw new Deno.errors.ConnectionRefused("Too many requests to currency conversion API (how?)")
+    }
+    if (resp.status != 200) {
+        throw new Deno.errors.NotFound('Could not connect to currency conversion API');
+    }
+
+    using file = await Deno.open(currency_conversion_cache_filename, {
+        create: true,
+        write: true,
+    });
+    await resp.body!.pipeTo(file.writable);
+}
+
+interface CurrencyAPIResponse {
     result: string;
     provider: string;
     documentation: string;
@@ -12,6 +122,7 @@ export interface CurrencyAPIResponse {
     rates: Rates;
 }
 interface Rates {
+    [x: string]: number | null;
     USD: number;
     AED: number;
     AFN: number;
