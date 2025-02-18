@@ -38,6 +38,7 @@ for await (const m of prov.process()) {
 console.log('Program complete');
 
 async function update_currency_cache() {
+    await Deno.mkdir(path.dirname(currency_conversion_cache_filename), { recursive: true });
     using file = await Deno.open(currency_conversion_cache_filename, {
         create: true,
         write: true
