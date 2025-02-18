@@ -17,8 +17,8 @@ try {
 // Load the cache. If the cache is out of date, redownload it.
 currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename))
 if (new Date(currency_conversion_cache.time_next_update_utc) < new Date()) {
-    await update_currency_cache()
     console.log("Currency cache out of date. Updating.")
+    await update_currency_cache()
     currency_conversion_cache = JSON.parse(Deno.readTextFileSync(currency_conversion_cache_filename))
 }
 
