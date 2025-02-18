@@ -114,59 +114,59 @@ export class ProviderConfig {
     }
 }
 export class ConfigurationBuilder {
-    private elements: ConfigElement[] = []
+    private elements: ConfigElement[] = [];
 
     addCheckbox(label: string, callback: (newValue: boolean) => void) {
-        this.elements.push(new ConfigCheckbox(label, callback))
+        this.elements.push(new ConfigCheckbox(label, callback));
     }
     addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
-        this.elements.push(new ConfigSlider(label, min, max, callback))
+        this.elements.push(new ConfigSlider(label, min, max, callback));
     }
-    addTextBox<T extends string | number> (
-        label: string, defaultVal: T,
+    addTextBox<T extends string | number>(
+        label: string,
+        defaultVal: T,
         callback: (newValue: T) => void,
-        validate: (vewValue: T) => T
+        validate: (vewValue: T) => T,
     ) {
-        this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate))
+        this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate));
     }
     addButton(label: string, callback: () => void) {
-        this.elements.push(new ConfigButton(label, callback))
+        this.elements.push(new ConfigButton(label, callback));
     }
 
-
     build(): string {
-        let content = "<div>"
+        let content = '<div>';
         for (const elem of this.elements) {
-            content += elem.render()
+            content += elem.render();
         }
-        content += "</div>"
+        content += '</div>';
 
-        return content
+        return content;
     }
 }
 
 interface ConfigElement {
-    type: ConfigTypes
-    readonly label: string
-    render(): string
+    type: ConfigTypes;
+    readonly label: string;
+    render(): string;
     callback(...args: unknown[]): void;
 }
 
 enum ConfigTypes {
-    checkbox    = "checkbox",
-    slider      = "slider",
-    textbox     = "textbox",
-    button      = "button"
+    checkbox = 'checkbox',
+    slider = 'slider',
+    textbox = 'textbox',
+    button = 'button',
 }
 
 export class ConfigCheckbox implements ConfigElement {
-    type = ConfigTypes.checkbox
-    label
-    callback: (newVal: boolean) => void
+    type = ConfigTypes.checkbox;
+    label;
+    callback: (newVal: boolean) => void;
 
     constructor(label: string, callback: (newValue: boolean) => void) {
-        this.label = label
-        this.callback = callback
+        this.label = label;
+        this.callback = callback;
     }
 
     render(): string {
@@ -175,19 +175,19 @@ export class ConfigCheckbox implements ConfigElement {
 }
 
 export class ConfigSlider implements ConfigElement {
-    type = ConfigTypes.slider
-    label
-    min: number
-    max: number
-    callback: (newVal: number) => void
+    type = ConfigTypes.slider;
+    label;
+    min: number;
+    max: number;
+    callback: (newVal: number) => void;
 
     constructor(label: string, min: number, max: number, onchange: (newValue: number) => void) {
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
-        this.label = label
-        this.min = min
-        this.max = max
+        this.label = label;
+        this.min = min;
+        this.max = max;
         this.callback = onchange;
     }
 
@@ -197,17 +197,17 @@ export class ConfigSlider implements ConfigElement {
 }
 
 export class ConfigTextBox<T extends string | number> implements ConfigElement {
-    type = ConfigTypes.textbox
+    type = ConfigTypes.textbox;
     label;
-    value: T
-    callback: (newVal: T) => void
-    validate: (newVal: T) => T
+    value: T;
+    callback: (newVal: T) => void;
+    validate: (newVal: T) => T;
 
     constructor(label: string, defaultVal: T, onChange: (newValue: T) => void, validate: (newValue: T) => T) {
-        this.label = label
-        this.value = defaultVal
-        this.callback = onChange
-        this.validate = validate
+        this.label = label;
+        this.value = defaultVal;
+        this.callback = onChange;
+        this.validate = validate;
     }
 
     render(): string {
@@ -216,16 +216,16 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
 }
 
 export class ConfigButton implements ConfigElement {
-    type = ConfigTypes.button
-    label
-    callback: () => void
+    type = ConfigTypes.button;
+    label;
+    callback: () => void;
 
     constructor(label: string, callback: () => void) {
-        this.label = label
-        this.callback = callback
+        this.label = label;
+        this.callback = callback;
     }
 
     render(): string {
-        return `<button onclick="${this.label}_onClick()">${this.label}</button>`
+        return `<button onclick="${this.label}_onClick()">${this.label}</button>`;
     }
 }
