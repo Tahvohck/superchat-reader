@@ -44,10 +44,6 @@ console.log('Program complete');
 async function update_currency_cache() {
     console.log("Rates By Exchange Rate API: https://www.exchangerate-api.com")
     await Deno.mkdir(path.dirname(currency_conversion_cache_filename), { recursive: true });
-    using file = await Deno.open(currency_conversion_cache_filename, {
-        create: true,
-        write: true,
-    });
     const resp = await fetch(currency_conversion_api);
     if (resp.status == 429) {
         console.error("Too many requests to conversion API. Wait 20 minutes and try again.")
@@ -56,5 +52,10 @@ async function update_currency_cache() {
     if (resp.status != 200) {
         throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
+
+    using file = await Deno.open(currency_conversion_cache_filename, {
+        create: true,
+        write: true,
+    });
     await resp.body!.pipeTo(file.writable);
 }
