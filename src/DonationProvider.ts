@@ -2,6 +2,7 @@ import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import * as path from '@std/path';
 import { crypto } from '@std/crypto/crypto';
+import UISnippets from '@/UISnippets/dir.ts'
 
 export interface DonationProvider {
     readonly name: string;
@@ -210,6 +211,10 @@ enum ConfigTypes {
     textbox = 'textbox',
     button = 'button',
 }
+
+const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text()
+const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
+
 
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox implements ConfigElement {
