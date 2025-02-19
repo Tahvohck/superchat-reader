@@ -290,4 +290,14 @@ interface Rates {
 interface CurrencySymbol {
     [x: string] : string | null
 }
-export const CurrencySymbolMap = (await import('@/CurrencyMap.json', {with: {type: 'json'}})).default as CurrencySymbol
+const CurrencySymbolMap = (await import('@/CurrencyMap.json', {with: {type: 'json'}})).default as CurrencySymbol
+export function getCurrencyCodeFromString(str: string) {
+    const replaceRegex = /\s*[\d.,]+\s*/
+    const iso4217 = /[a-zA-Z]{3}/
+    const currencySymbol = str.replace(replaceRegex, "")
+
+    if (iso4217.test(currencySymbol)) {
+        return code(currencySymbol.toUpperCase())
+    }
+    return code(CurrencySymbolMap[currencySymbol]?.toUpperCase() ?? "")
+}
