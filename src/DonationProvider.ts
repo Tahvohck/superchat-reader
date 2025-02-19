@@ -118,7 +118,7 @@ export class ProviderConfig {
 
 //TODO: Probably this is complex enough that it should be moved to its own file
 export class ConfigurationBuilder {
-    private elements: ConfigElement[] = [];
+    private elements: (ConfigElement | ConfigElementBase)[] = [];
 
     /**
      * Adds a checkbox to the configuration panel.
@@ -206,6 +206,7 @@ function renderElement(htmlSnippet: string, replacementRegex: RegExp, replacemen
 
 /** Possible types of configuration elements */
 enum ConfigTypes {
+    base = 'base',
     checkbox = 'checkbox',
     slider = 'slider',
     textbox = 'textbox',
@@ -214,6 +215,56 @@ enum ConfigTypes {
 
 const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text()
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
+
+abstract class ConfigElementBase {
+    /** Element type */
+    abstract readonly type: ConfigTypes
+    /** Element label, typically displayed next to the element */
+    readonly label
+    readonly replacementKeys: {[x: string]: string};
+    readonly replacementRegex: RegExp;
+    /** Unique ID to assign to webUI bindings */
+    readonly callbackIdentifier;
+    /** Function to be called when the element is interacted with */
+    callback: (...args: unknown[]) => unknown;
+
+    // Ignore that the function isn't specific enough here, child classes will be more specific
+    // deno-lint-ignore no-explicit-any
+    constructor(label: string, callback: (...args: any[]) => any, replaceObject: {[x: string]: string} = {}) {
+        this.label = label
+        this.callback = callback
+        this.callbackIdentifier = crypto.randomUUID().replaceAll("-","_")
+        replaceObject['callbackID'] = this.callbackIdentifier
+        replaceObject['label'] = label
+        this.replacementKeys = replaceObject
+        const innerRegex = Object.keys(this.replacementKeys).join("|")
+        this.replacementRegex = new RegExp(`{(${innerRegex})}`, "gi")
+    }
+
+    /** Render the element to HTML */
+    render(): string {
+        let snippet;
+        switch (this.type) {
+            case ConfigTypes.base: {
+                throw new Error("Base config type is not renderable!")
+            }
+            case ConfigTypes.checkbox: {
+                snippet = CheckboxHtmlSnippet
+                break
+            }
+            case ConfigTypes.slider: {
+                throw new Error("Not yet implemented")
+            }
+            case ConfigTypes.textbox: {
+                throw new Error("Not yet implemented")
+            }
+            case ConfigTypes.button: {
+                snippet = ButtonHtmlSnippet
+            }
+        }
+        return renderElement(snippet, this.replacementRegex, this.replacementKeys)
+    }
+}
 
 
 /** Dynamically handled checkbox for configuration */
