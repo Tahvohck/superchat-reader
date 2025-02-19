@@ -28,6 +28,10 @@ export async function loadCCCache() {
     if (!await isAvailable()) { await update_currency_cache() }
     console.log("Rates By Exchange Rate API: https://www.exchangerate-api.com")
     currency_conversion_cache = JSON.parse(await Deno.readTextFile(currency_conversion_cache_filename));
+    console.log(
+        "Next cache update due at: " + 
+        new Date(currency_conversion_cache.time_next_update_utc)
+    )
     // Return early if not out of date
     if (!isOutOfDate()) { return }
     // otherwise update the cache and reload it
