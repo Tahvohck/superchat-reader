@@ -277,6 +277,6 @@ export class ConfigButton implements ConfigElement {
     }
 
     render(): string {
-        return `<button onclick="${this.label}_onClick()">${this.label}</button>`;
+        return `<button onclick="${this.callbackIdentifier}()">${this.label}</button>`;
     }
 }
