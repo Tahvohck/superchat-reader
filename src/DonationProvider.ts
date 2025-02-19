@@ -329,18 +329,15 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
 }
 
 /** Dynamically handled button for configuration */
-export class ConfigButton implements ConfigElement {
-    type = ConfigTypes.button;
-    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
-    label;
-    callback: () => void;
+export class ConfigButton extends ConfigElementBase {
+    override type = ConfigTypes.button;
+    declare callback: () => void;
 
     constructor(label: string, callback: () => void) {
-        this.label = label;
-        this.callback = callback;
+        super(label, callback)
     }
 
-    render(): string {
-        return `<button onclick="${this.callbackIdentifier}()">${this.label}</button>`;
+    bind(wui: WebUI): void {
+        wui.bind(this.callbackIdentifier, this.callback)
     }
 }
