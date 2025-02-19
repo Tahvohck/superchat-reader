@@ -183,7 +183,7 @@ export class ConfigurationBuilder {
 /** Items that all elements in the configuration panel share */
 interface ConfigElement {
     /** Element type */
-    type: ConfigTypes;
+    readonly type: ConfigTypes;
     /** Element label, typically displayed next to the element */
     readonly label: string;
     /** Render the element to HTML */
