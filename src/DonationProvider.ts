@@ -341,3 +341,22 @@ export class ConfigButton extends ConfigElementBase {
         wui.bind(this.callbackIdentifier, this.callback)
     }
 }
+
+if (import.meta.main) {
+    const cb = new ConfigurationBuilder()
+    cb.addButton("click here to boop", () => {
+        console.log("BOOP")
+    })
+    const win = new WebUI()
+    const html = 
+        `<html><head><script src="webui.js"></script></head>
+            <body>
+                ${cb.build()}
+            </body>
+        </html>`
+    cb.bind(win)
+    // We don't care about errors
+    win.show(html).catch(() => {})
+    
+    await WebUI.wait()
+}
