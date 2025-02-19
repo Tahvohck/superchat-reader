@@ -194,6 +194,15 @@ interface ConfigElement {
     readonly callbackIdentifier: string
 }
 
+function renderElement(htmlSnippet: string, replacementRegex: RegExp, replacements: {[x: string]: string}) {
+    return htmlSnippet.replaceAll(replacementRegex,
+        (str) => {
+            str = str.replaceAll(/[{}]/g, "")
+            return replacements[str]!
+        }
+    )
+}
+
 /** Possible types of configuration elements */
 enum ConfigTypes {
     checkbox = 'checkbox',
