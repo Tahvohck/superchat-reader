@@ -1,6 +1,6 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
-import { join } from '@std/path/join';
+import * as path from '@std/path';
 import { crypto } from '@std/crypto/crypto';
 
 export interface DonationProvider {
@@ -84,10 +84,10 @@ export class ProviderConfig {
         const copy = structuredClone(this);
         Reflect.deleteProperty(copy, 'savePath');
 
-        const savePath = join(Deno.cwd(), 'config', this.savePath);
+        const savePath = path.join(Deno.cwd(), 'config', this.savePath);
 
         // ensure config folder exists
-        Deno.mkdirSync(join(Deno.cwd(), 'config'));
+        Deno.mkdirSync(path.join(Deno.cwd(), 'config'));
         Deno.writeTextFileSync(savePath, JSON.stringify(copy));
     }
 
