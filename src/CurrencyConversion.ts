@@ -1,6 +1,8 @@
 import * as path from '@std/path';
 import { code } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
+import { assertEquals, assertGreater} from '@std/assert'
+
 let     currency_conversion_cache: CurrencyAPIResponse
 const   currency_conversion_cache_filename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
 const   currency_conversion_api = 'https://open.er-api.com/v6/latest/USD';
@@ -305,3 +307,35 @@ export function getCurrencyCodeFromString(str: string) {
     }
     return code(CurrencySymbolMap[currencySymbol]?.toUpperCase() ?? "")
 }
+
+Deno.test("Currency Code Test", () => {
+    assertEquals(getCurrencyCodeFromString("CA$1")?.code, "CAD")
+    assertEquals(getCurrencyCodeFromString("$1")?.code, "USD")
+    assertEquals(getCurrencyCodeFromString("A$1")?.code, "AUD")
+    assertEquals(getCurrencyCodeFromString("PhP1")?.code, "PHP")
+    assertEquals(getCurrencyCodeFromString("¥ 10000")?.code, "JPY")
+    assertEquals(getCurrencyCodeFromString("10000 ¥")?.code, "JPY")
+})
+
+Deno.test("Able to load cache", async () => {
+    await loadCCCache()
+    assertEquals(null != currency_conversion_cache, true)
+})
+
+Deno.test("ARS is weaker than USD", async () => {
+    if (!currency_conversion_cache) {
+        await loadCCCache()
+    }
+    const usdAmount = 1
+    const arsAmount = convertCurrency(usdAmount, code('USD'), code('ARS'))
+    assertGreater(arsAmount, usdAmount)
+})
+
+Deno.test("USD number is smaller than JPY", async () => {
+    if (!currency_conversion_cache) {
+        await loadCCCache()
+    }
+    const jpyAmount = 100
+    const usdAmount = convertCurrency(jpyAmount, code('JPY'))
+    assertGreater(jpyAmount, usdAmount)
+})
