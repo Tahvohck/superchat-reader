@@ -180,6 +180,12 @@ export class ConfigurationBuilder {
 
         return content;
     }
+
+    bind(wui: WebUI): void {
+        for (const elem of this.elements) {
+            elem.bind(wui)
+        }
+    }
 }
 
 /** Items that all elements in the configuration panel share */
