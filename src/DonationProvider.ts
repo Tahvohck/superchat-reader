@@ -1,6 +1,7 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { join } from '@std/path/join';
+import { crypto } from '@std/crypto/crypto';
 
 export interface DonationProvider {
     readonly name: string;
@@ -189,6 +190,8 @@ interface ConfigElement {
     render(): string;
     /** Function to be called when the element is interacted with */
     callback(...args: unknown[]): void;
+    /** Unique ID to assign to webUI bindings */
+    readonly callbackIdentifier: string
 }
 
 /** Possible types of configuration elements */
@@ -202,6 +205,7 @@ enum ConfigTypes {
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox implements ConfigElement {
     type = ConfigTypes.checkbox;
+    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
     label;
     callback: (newVal: boolean) => void;
 
@@ -218,6 +222,7 @@ export class ConfigCheckbox implements ConfigElement {
 /** Dynamically handled slider for configuration */
 export class ConfigSlider implements ConfigElement {
     type = ConfigTypes.slider;
+    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
     label;
     min: number;
     max: number;
@@ -241,6 +246,7 @@ export class ConfigSlider implements ConfigElement {
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox<T extends string | number> implements ConfigElement {
     type = ConfigTypes.textbox;
+    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
     label;
     value: T;
     callback: (newVal: T) => void;
@@ -261,6 +267,7 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
 /** Dynamically handled button for configuration */
 export class ConfigButton implements ConfigElement {
     type = ConfigTypes.button;
+    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
     label;
     callback: () => void;
 
