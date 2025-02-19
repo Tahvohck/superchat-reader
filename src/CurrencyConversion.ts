@@ -286,3 +286,8 @@ interface Rates {
     ZMW: number;
     ZWL: number;
 }
+
+interface CurrencySymbol {
+    [x: string] : string | null
+}
+export const CurrencySymbolMap = (await import('@/CurrencyMap.json', {with: {type: 'json'}})).default as CurrencySymbol
