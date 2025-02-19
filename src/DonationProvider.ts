@@ -3,6 +3,7 @@ import { LocallyCachedImage } from '@/ImageCache.ts';
 import * as path from '@std/path';
 import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@/UISnippets/dir.ts'
+import { WebUI } from "https://deno.land/x/webui@2.5.3/mod.ts";
 
 export interface DonationProvider {
     readonly name: string;
@@ -260,6 +261,8 @@ abstract class ConfigElementBase {
             }
         )
     }
+
+    abstract bind(wui: WebUI): void;
 }
 
 
