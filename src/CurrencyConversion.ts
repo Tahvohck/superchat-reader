@@ -2,6 +2,7 @@ import * as path from '@std/path';
 import { code } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
 import { assertEquals, assertGreater} from '@std/assert'
+import { default as CurrencySymbolMap } from '@/CurrencyMap.json' with {type: 'json'}
 
 let     ccCache: CurrencyAPIResponse
 const   ccCacheFilename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
@@ -293,14 +294,11 @@ interface Rates {
     ZWL: number;
 }
 
-interface CurrencySymbol {
-    [x: string] : string | null
-}
-const CurrencySymbolMap = (await import('@/CurrencyMap.json', {with: {type: 'json'}})).default as CurrencySymbol
+
 export function getCurrencyCodeFromString(str: string) {
     const replaceRegex = /\s*[\d.,]+\s*/
     const iso4217 = /[a-zA-Z]{3}/
-    const currencySymbol = str.replace(replaceRegex, "")
+    const currencySymbol = str.replace(replaceRegex, "") as keyof typeof CurrencySymbolMap
 
     if (iso4217.test(currencySymbol)) {
         return code(currencySymbol.toUpperCase())
