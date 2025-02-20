@@ -16,7 +16,7 @@ export interface DonationProvider {
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
     process(): AsyncGenerator<DonationMessage>;
-    configure(cb: ConfigurationBuilder): ConfigurationBuilder;
+    configure(cb: ConfigurationBuilder): void;
 }
 
 export interface DonationMessage {

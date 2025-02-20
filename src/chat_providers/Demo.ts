@@ -56,8 +56,8 @@ export class DemoProvider implements DonationProvider {
         }
     }
 
-    configure(cb: ConfigurationBuilder): ConfigurationBuilder {
-        throw new Error('Method not implemented.');
+    configure(cb: ConfigurationBuilder): void {
+        
     }
 }
 
