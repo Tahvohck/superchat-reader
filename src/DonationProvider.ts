@@ -137,8 +137,8 @@ export class ConfigurationBuilder {
      * @param max Maximum value
      * @param callback The function to call when the value changes
      */
-    addSlider(label: string, min: number, max: number, callback: (newValue: number) => void) {
-        this.elements.push(new ConfigSlider(label, min, max, callback));
+    addSlider(label: string, min: number, max: number, step = 1, callback: (newValue: number) => void) {
+        this.elements.push(new ConfigSlider(label, min, max, step, callback));
     }
 
     /**
@@ -213,11 +213,12 @@ enum ConfigTypes {
 
 const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text()
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
+const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text()
 
 abstract class ConfigElementBase {
     /** Element type */
     abstract readonly type: ConfigTypes
-    readonly replacementKeys: {[x: string]: string};
+    readonly replacementKeys: {[x: string]: string | number};
     readonly replacementRegex: RegExp;
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
@@ -229,7 +230,7 @@ abstract class ConfigElementBase {
      * @param label Element label, typically displayed next to the element
      * @param replaceObject 
      */
-    constructor(label: string, replaceObject: {[x: string]: string} = {}) {
+    constructor(label: string, replaceObject: {[x: string]: string | number} = {}) {
         this.callbackIdentifier = crypto.randomUUID().replaceAll("-","_")
         replaceObject['callbackID'] = this.callbackIdentifier
         replaceObject['label'] = label
@@ -250,7 +251,8 @@ abstract class ConfigElementBase {
                 break
             }
             case ConfigTypes.slider: {
-                throw new Error("Not yet implemented")
+                snippet = SliderHtmlSnippet
+                break
             }
             case ConfigTypes.textbox: {
                 throw new Error("Not yet implemented")
@@ -262,7 +264,7 @@ abstract class ConfigElementBase {
         return snippet.replaceAll(this.replacementRegex,
             (str) => {
                 str = str.replaceAll(/[{}]/g, "")
-                return this.replacementKeys[str]!
+                return String(this.replacementKeys[str]!)
             }
         )
     }
@@ -288,26 +290,25 @@ export class ConfigCheckbox extends ConfigElementBase {
 }
 
 /** Dynamically handled slider for configuration */
-export class ConfigSlider implements ConfigElement {
+export class ConfigSlider extends ConfigElementBase {
     type = ConfigTypes.slider;
-    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
-    label;
-    min: number;
-    max: number;
-    callback: (newVal: number) => void;
 
-    constructor(label: string, min: number, max: number, onchange: (newValue: number) => void) {
+    constructor(
+        label: string,
+        readonly min: number, readonly max: number, readonly step: number,
+        readonly callback: (newValue: number) => void
+    ) {
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
-        this.label = label;
-        this.min = min;
-        this.max = max;
-        this.callback = onchange;
+        super(label, {min, max, step})
     }
 
-    render(): string {
-        throw new Error('Not Implemented');
+    bind(wui: WebUI): void {
+        wui.bind(`slider_${this.callbackIdentifier}`, ({arg}) => {
+            const value = arg.number(0)
+            this.callback(value)
+        })
     }
 }
 
@@ -351,6 +352,9 @@ if (import.meta.main) {
         console.log("BOOP")
     })
     cb.addCheckbox("check", (newVal) => {
+        console.log(newVal)
+    })
+    cb.addSlider("slider", 0, 10, 1, (newVal) => {
         console.log(newVal)
     })
     const win = new WebUI()
