@@ -2,8 +2,8 @@ import { CurrencyCodeRecord } from 'currency-codes';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import * as path from '@std/path';
 import { crypto } from '@std/crypto/crypto';
-import UISnippets from '@/UISnippets/dir.ts'
-import { WebUI } from "https://deno.land/x/webui@2.5.3/mod.ts";
+import UISnippets from '@/UISnippets/dir.ts';
+import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
 
 export interface DonationProvider {
     readonly name: string;
@@ -137,10 +137,13 @@ export class ConfigurationBuilder {
      * @param max Maximum value
      * @param callback The function to call when the value changes
      */
-    addSlider(label: string,
-        min: number, max: number, 
-        step = 1, defaultVal: number | null = null,
-        callback: (newValue: number) => void
+    addSlider(
+        label: string,
+        min: number,
+        max: number,
+        step = 1,
+        defaultVal: number | null = null,
+        callback: (newValue: number) => void,
     ) {
         this.elements.push(new ConfigSlider(label, min, max, step, defaultVal, callback));
     }
@@ -187,7 +190,7 @@ export class ConfigurationBuilder {
 
     bind(wui: WebUI): void {
         for (const elem of this.elements) {
-            elem.bind(wui)
+            elem.bind(wui);
         }
     }
 }
@@ -201,16 +204,16 @@ enum ConfigTypes {
     button = 'button',
 }
 
-const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text()
-const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
-const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text()
-const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text()
+const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text();
+const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text();
+const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text();
+const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
 
 /** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
     /** Element type */
-    abstract readonly type: ConfigTypes
-    readonly replacementKeys: {[x: string]: string | number};
+    abstract readonly type: ConfigTypes;
+    readonly replacementKeys: { [x: string]: string | number };
     readonly replacementRegex: RegExp;
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
@@ -220,15 +223,15 @@ abstract class ConfigElementBase {
 
     /**
      * @param label Element label, typically displayed next to the element
-     * @param replaceObject 
+     * @param replaceObject
      */
-    constructor(label: string, replaceObject: {[x: string]: string | number} = {}) {
-        this.callbackIdentifier = crypto.randomUUID().replaceAll("-","_")
-        replaceObject['callbackID'] = this.callbackIdentifier
-        replaceObject['label'] = label
-        this.replacementKeys = replaceObject
-        const innerRegex = Object.keys(this.replacementKeys).join("|")
-        this.replacementRegex = new RegExp(`{(${innerRegex})}`, "gi")
+    constructor(label: string, replaceObject: { [x: string]: string | number } = {}) {
+        this.callbackIdentifier = crypto.randomUUID().replaceAll('-', '_');
+        replaceObject['callbackID'] = this.callbackIdentifier;
+        replaceObject['label'] = label;
+        this.replacementKeys = replaceObject;
+        const innerRegex = Object.keys(this.replacementKeys).join('|');
+        this.replacementRegex = new RegExp(`{(${innerRegex})}`, 'gi');
     }
 
     /** Render the element to HTML */
@@ -236,49 +239,46 @@ abstract class ConfigElementBase {
         let snippet;
         switch (this.type) {
             case ConfigTypes.base: {
-                throw new Error("Base config type is not renderable!")
+                throw new Error('Base config type is not renderable!');
             }
             case ConfigTypes.checkbox: {
-                snippet = CheckboxHtmlSnippet
-                break
+                snippet = CheckboxHtmlSnippet;
+                break;
             }
             case ConfigTypes.slider: {
-                snippet = SliderHtmlSnippet
-                break
+                snippet = SliderHtmlSnippet;
+                break;
             }
             case ConfigTypes.textbox: {
-                snippet = TextboxHtmlSnippet
-                break
+                snippet = TextboxHtmlSnippet;
+                break;
             }
             case ConfigTypes.button: {
-                snippet = ButtonHtmlSnippet
+                snippet = ButtonHtmlSnippet;
             }
         }
-        return snippet.replaceAll(this.replacementRegex,
-            (str) => {
-                str = str.replaceAll(/[{}]/g, "")
-                return String(this.replacementKeys[str]!)
-            }
-        )
+        return snippet.replaceAll(this.replacementRegex, (str) => {
+            str = str.replaceAll(/[{}]/g, '');
+            return String(this.replacementKeys[str]!);
+        });
     }
 
     abstract bind(wui: WebUI): void;
 }
 
-
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox extends ConfigElementBase {
-    type = ConfigTypes.checkbox
+    type = ConfigTypes.checkbox;
 
     constructor(label: string, readonly callback: (newValue: boolean) => void) {
-        super(label)
+        super(label);
     }
 
     bind(wui: WebUI): void {
-        wui.bind(`checked_${this.callbackIdentifier}`, ({arg}) => {
+        wui.bind(`checked_${this.callbackIdentifier}`, ({ arg }) => {
             const checkStatus = arg.boolean(0);
-            this.callback(checkStatus)
-        })
+            this.callback(checkStatus);
+        });
     }
 }
 
@@ -288,23 +288,26 @@ export class ConfigSlider extends ConfigElementBase {
 
     constructor(
         label: string,
-        readonly min: number, readonly max: number, readonly step: number, readonly defaultVal: number | null,
-        readonly callback: (newValue: number) => void
+        readonly min: number,
+        readonly max: number,
+        readonly step: number,
+        readonly defaultVal: number | null,
+        readonly callback: (newValue: number) => void,
     ) {
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
         if (!defaultVal) {
-            defaultVal = min
+            defaultVal = min;
         }
-        super(label, {min, max, step, defaultVal})
+        super(label, { min, max, step, defaultVal });
     }
 
     bind(wui: WebUI): void {
-        wui.bind(`slider_${this.callbackIdentifier}`, ({arg}) => {
-            const value = arg.number(0)
-            this.callback(value)
-        })
+        wui.bind(`slider_${this.callbackIdentifier}`, ({ arg }) => {
+            const value = arg.number(0);
+            this.callback(value);
+        });
     }
 }
 
@@ -313,19 +316,20 @@ export class ConfigTextBox extends ConfigElementBase {
     type = ConfigTypes.textbox;
 
     constructor(
-        label: string, readonly defaultVal: string, 
-        readonly callback: (newValue: string) => void, 
-        readonly validate: (newValue: string) => string
+        label: string,
+        readonly defaultVal: string,
+        readonly callback: (newValue: string) => void,
+        readonly validate: (newValue: string) => string,
     ) {
         super(label, {
-            defaultVal
-        })
+            defaultVal,
+        });
     }
 
     bind(wui: WebUI): void {
-        wui.bind(`textbox_${this.callbackIdentifier}`, ({arg}) => {
-            this.callback(arg.string(0))
-        })
+        wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
+            this.callback(arg.string(0));
+        });
     }
 }
 
@@ -334,38 +338,37 @@ export class ConfigButton extends ConfigElementBase {
     override type = ConfigTypes.button;
 
     constructor(label: string, readonly callback: () => void) {
-        super(label)
+        super(label);
     }
 
     bind(wui: WebUI): void {
-        wui.bind(this.callbackIdentifier, this.callback)
+        wui.bind(this.callbackIdentifier, this.callback);
     }
 }
 
 if (import.meta.main) {
-    const cb = new ConfigurationBuilder()
-    cb.addButton("click here to boop", () => {
-        console.log("BOOP")
-    })
-    cb.addCheckbox("check", (newVal) => {
-        console.log(newVal)
-    })
-    cb.addSlider("slider", 0, 10, 1, undefined, (newVal) => {
-        console.log(newVal)
-    })
-    cb.addTextBox("Type here!", "pls", (str) => {
-        console.log(str)
-    })
-    const win = new WebUI()
-    const html = 
-        `<html><head><script src="webui.js"></script></head>
+    const cb = new ConfigurationBuilder();
+    cb.addButton('click here to boop', () => {
+        console.log('BOOP');
+    });
+    cb.addCheckbox('check', (newVal) => {
+        console.log(newVal);
+    });
+    cb.addSlider('slider', 0, 10, 1, undefined, (newVal) => {
+        console.log(newVal);
+    });
+    cb.addTextBox('Type here!', 'pls', (str) => {
+        console.log(str);
+    });
+    const win = new WebUI();
+    const html = `<html><head><script src="webui.js"></script></head>
             <body>
                 ${cb.build()}
             </body>
-        </html>`
-    cb.bind(win)
+        </html>`;
+    cb.bind(win);
     // We don't care about errors
-    win.show(html).catch(() => {})
-    
-    await WebUI.wait()
+    win.show(html).catch(() => {});
+
+    await WebUI.wait();
 }

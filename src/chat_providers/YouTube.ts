@@ -1,4 +1,10 @@
-import { ConfigurationBuilder, DonationClass, DonationMessage, DonationProvider, ProviderConfig } from '@/DonationProvider.ts';
+import {
+    ConfigurationBuilder,
+    DonationClass,
+    DonationMessage,
+    DonationProvider,
+    ProviderConfig,
+} from '@/DonationProvider.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@/ImageCache.ts';

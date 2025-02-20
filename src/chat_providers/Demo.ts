@@ -57,7 +57,6 @@ export class DemoProvider implements DonationProvider {
     }
 
     configure(cb: ConfigurationBuilder): void {
-        
     }
 }
 

@@ -1,5 +1,5 @@
-import * as embedder from "jsr:@nfnitloop/deno-embedder"
-import { parseArgs } from '@std/cli/parse-args'
+import * as embedder from 'jsr:@nfnitloop/deno-embedder';
+import { parseArgs } from '@std/cli/parse-args';
 import { sleep } from '@/util.ts';
 
 const options = {
@@ -7,34 +7,34 @@ const options = {
 
     mappings: [
         {
-            sourceDir: "../UISnippets",
-            destDir: "UISnippets"
+            sourceDir: '../UISnippets',
+            destDir: 'UISnippets',
         },
-    ]
-}
+    ],
+};
 
 if (import.meta.main) {
-    const args: string[] = []
+    const args: string[] = [];
     const flags = parseArgs(Deno.args, {
-        boolean: ["loop"],
+        boolean: ['loop'],
         alias: {
-            "L": "loop"
+            'L': 'loop',
         },
         unknown: (arg, _key, str) => {
             if (arg) {
-                args.push(arg)
+                args.push(arg);
             }
             if (str) {
-                args.push(str as string)
+                args.push(str as string);
             }
-            return false
-        }
-    })    
+            return false;
+        },
+    });
     if (flags.loop) {
         while (true) {
-            await sleep(1000)
+            await sleep(1000);
         }
     } else {
-        await embedder.main({options, args})
+        await embedder.main({ options, args });
     }
 }
