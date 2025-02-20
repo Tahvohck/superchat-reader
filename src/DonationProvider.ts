@@ -119,7 +119,7 @@ export class ProviderConfig {
 
 //TODO: Probably this is complex enough that it should be moved to its own file
 export class ConfigurationBuilder {
-    private elements: (ConfigElement | ConfigElementBase)[] = [];
+    private elements: ConfigElementBase[] = [];
 
     /**
      * Adds a checkbox to the configuration panel.
@@ -192,20 +192,6 @@ export class ConfigurationBuilder {
     }
 }
 
-/** Items that all elements in the configuration panel share */
-interface ConfigElement {
-    /** Element type */
-    readonly type: ConfigTypes;
-    /** Element label, typically displayed next to the element */
-    readonly label: string;
-    /** Render the element to HTML */
-    render(): string;
-    /** Function to be called when the element is interacted with */
-    callback(...args: unknown[]): void;
-    /** Unique ID to assign to webUI bindings */
-    readonly callbackIdentifier: string
-}
-
 /** Possible types of configuration elements */
 enum ConfigTypes {
     base = 'base',
@@ -220,6 +206,7 @@ const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
 const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text()
 const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text()
 
+/** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
     /** Element type */
     abstract readonly type: ConfigTypes
