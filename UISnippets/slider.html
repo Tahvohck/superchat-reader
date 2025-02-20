@@ -3,6 +3,7 @@
     <input 
         type="range" id="{callbackID}" 
         min="{min}" max="{max}" step="{step}" 
+        value="{defaultVal}"
         oninput="oninput_{callbackID}(this.value)"
     />
     <label id="{callbackID}_val">{min}</label>

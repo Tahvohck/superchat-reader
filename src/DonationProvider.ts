@@ -137,8 +137,12 @@ export class ConfigurationBuilder {
      * @param max Maximum value
      * @param callback The function to call when the value changes
      */
-    addSlider(label: string, min: number, max: number, step = 1, callback: (newValue: number) => void) {
-        this.elements.push(new ConfigSlider(label, min, max, step, callback));
+    addSlider(label: string,
+        min: number, max: number, 
+        step = 1, defaultVal: number | null = null,
+        callback: (newValue: number) => void
+    ) {
+        this.elements.push(new ConfigSlider(label, min, max, step, defaultVal, callback));
     }
 
     /**
@@ -295,13 +299,16 @@ export class ConfigSlider extends ConfigElementBase {
 
     constructor(
         label: string,
-        readonly min: number, readonly max: number, readonly step: number,
+        readonly min: number, readonly max: number, readonly step: number, readonly defaultVal: number | null,
         readonly callback: (newValue: number) => void
     ) {
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
-        super(label, {min, max, step})
+        if (!defaultVal) {
+            defaultVal = min
+        }
+        super(label, {min, max, step, defaultVal})
     }
 
     bind(wui: WebUI): void {
@@ -354,7 +361,7 @@ if (import.meta.main) {
     cb.addCheckbox("check", (newVal) => {
         console.log(newVal)
     })
-    cb.addSlider("slider", 0, 10, 1, (newVal) => {
+    cb.addSlider("slider", 0, 10, 1, undefined, (newVal) => {
         console.log(newVal)
     })
     const win = new WebUI()
