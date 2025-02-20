@@ -273,19 +273,18 @@ abstract class ConfigElementBase {
 
 
 /** Dynamically handled checkbox for configuration */
-export class ConfigCheckbox implements ConfigElement {
-    type = ConfigTypes.checkbox;
-    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
-    label;
-    callback: (newVal: boolean) => void;
+export class ConfigCheckbox extends ConfigElementBase {
+    type = ConfigTypes.checkbox
 
-    constructor(label: string, callback: (newValue: boolean) => void) {
-        this.label = label;
-        this.callback = callback;
+    constructor(label: string, readonly callback: (newValue: boolean) => void) {
+        super(label)
     }
 
-    render(): string {
-        throw new Error('Not Implemented');
+    bind(wui: WebUI): void {
+        wui.bind(`checked_${this.callbackIdentifier}`, ({arg}) => {
+            const checkStatus = arg.boolean(0);
+            this.callback(checkStatus)
+        })
     }
 }
 
@@ -337,10 +336,9 @@ export class ConfigTextBox<T extends string | number> implements ConfigElement {
 /** Dynamically handled button for configuration */
 export class ConfigButton extends ConfigElementBase {
     override type = ConfigTypes.button;
-    declare callback: () => void;
 
-    constructor(label: string, callback: () => void) {
-        super(label, callback)
+    constructor(label: string, readonly callback: () => void) {
+        super(label)
     }
 
     bind(wui: WebUI): void {
@@ -352,6 +350,9 @@ if (import.meta.main) {
     const cb = new ConfigurationBuilder()
     cb.addButton("click here to boop", () => {
         console.log("BOOP")
+    })
+    cb.addCheckbox("check", (newVal) => {
+        console.log(newVal)
     })
     const win = new WebUI()
     const html = 
