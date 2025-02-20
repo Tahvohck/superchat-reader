@@ -217,20 +217,19 @@ const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
 abstract class ConfigElementBase {
     /** Element type */
     abstract readonly type: ConfigTypes
-    /** Element label, typically displayed next to the element */
-    readonly label
     readonly replacementKeys: {[x: string]: string};
     readonly replacementRegex: RegExp;
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
     /** Function to be called when the element is interacted with */
-    callback: (...args: unknown[]) => unknown;
+    // deno-lint-ignore ban-types
+    abstract readonly callback: Function;
 
-    // Ignore that the function isn't specific enough here, child classes will be more specific
-    // deno-lint-ignore no-explicit-any
-    constructor(label: string, callback: (...args: any[]) => any, replaceObject: {[x: string]: string} = {}) {
-        this.label = label
-        this.callback = callback
+    /**
+     * @param label Element label, typically displayed next to the element
+     * @param replaceObject 
+     */
+    constructor(label: string, replaceObject: {[x: string]: string} = {}) {
         this.callbackIdentifier = crypto.randomUUID().replaceAll("-","_")
         replaceObject['callbackID'] = this.callbackIdentifier
         replaceObject['label'] = label
