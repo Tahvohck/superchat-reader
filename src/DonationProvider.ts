@@ -153,11 +153,11 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addTextBox<T extends string | number>(
+    addTextBox(
         label: string,
-        defaultVal: T,
-        callback: (newValue: T) => void,
-        validate: (vewValue: T) => T,
+        defaultVal: string,
+        callback: (newValue: string) => void,
+        validate: (newValue: string) => string = (v) => v,
     ) {
         this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate));
     }
@@ -218,6 +218,7 @@ enum ConfigTypes {
 const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text()
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text()
 const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text()
+const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text()
 
 abstract class ConfigElementBase {
     /** Element type */
@@ -259,7 +260,8 @@ abstract class ConfigElementBase {
                 break
             }
             case ConfigTypes.textbox: {
-                throw new Error("Not yet implemented")
+                snippet = TextboxHtmlSnippet
+                break
             }
             case ConfigTypes.button: {
                 snippet = ButtonHtmlSnippet
@@ -320,23 +322,23 @@ export class ConfigSlider extends ConfigElementBase {
 }
 
 /** Dynamically handled textbox for configuration */
-export class ConfigTextBox<T extends string | number> implements ConfigElement {
+export class ConfigTextBox extends ConfigElementBase {
     type = ConfigTypes.textbox;
-    readonly callbackIdentifier = crypto.randomUUID().replace("-","_")
-    label;
-    value: T;
-    callback: (newVal: T) => void;
-    validate: (newVal: T) => T;
 
-    constructor(label: string, defaultVal: T, onChange: (newValue: T) => void, validate: (newValue: T) => T) {
-        this.label = label;
-        this.value = defaultVal;
-        this.callback = onChange;
-        this.validate = validate;
+    constructor(
+        label: string, readonly defaultVal: string, 
+        readonly callback: (newValue: string) => void, 
+        readonly validate: (newValue: string) => string
+    ) {
+        super(label, {
+            defaultVal
+        })
     }
 
-    render(): string {
-        throw new Error('Not Implemented');
+    bind(wui: WebUI): void {
+        wui.bind(`textbox_${this.callbackIdentifier}`, ({arg}) => {
+            this.callback(arg.string(0))
+        })
     }
 }
 
@@ -363,6 +365,9 @@ if (import.meta.main) {
     })
     cb.addSlider("slider", 0, 10, 1, undefined, (newVal) => {
         console.log(newVal)
+    })
+    cb.addTextBox("Type here!", "pls", (str) => {
+        console.log(str)
     })
     const win = new WebUI()
     const html = 
