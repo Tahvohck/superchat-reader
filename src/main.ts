@@ -1,5 +1,12 @@
 import { DemoProvider } from '@/chat_providers/Demo.ts';
 import { donationMessageToString } from '@/DonationProvider.ts';
+import { convertCurrency, loadCCCache } from '@/CurrencyConversion.ts';
+import { code } from 'currency-codes';
+
+await loadCCCache()
+const usdToPhp = convertCurrency(1, code('USD'), code('PHP'))
+
+console.log(`1 USD is ${usdToPhp} PHP`);
 
 const prov = new DemoProvider();
 prov.activate();
