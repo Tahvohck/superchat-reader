@@ -12,6 +12,7 @@
         "youtube.js": "npm:@sireatsalot/youtube.js@^0.0.4"
     },
     "tasks": {
+        "run": "deno run -RWN src/main.ts",
         "embed": "deno run -RW src/embedder.ts build",
         "embed-watch": "deno run -RW --allow-run=deno src/embedder.ts dev --task monitor",
         "monitor": "deno run -RW src/embedder.ts -L"
