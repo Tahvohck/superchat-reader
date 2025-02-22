@@ -1,3 +1,4 @@
+import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
 import { DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
@@ -56,8 +57,7 @@ export class DemoProvider implements DonationProvider {
         }
     }
 
-    configure(): void {
-        throw new Error('Method not implemented.');
+    configure(cb: ConfigurationBuilder): void {
     }
 }
 

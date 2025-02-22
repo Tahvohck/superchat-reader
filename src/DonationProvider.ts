@@ -1,4 +1,5 @@
 import { CurrencyCodeRecord } from 'currency-codes';
+import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { join } from '@std/path/join';
 import { assertEquals } from '@std/assert/equals';
@@ -14,7 +15,7 @@ export interface DonationProvider {
      * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
      */
     process(): AsyncGenerator<DonationMessage>;
-    configure(): void;
+    configure(cb: ConfigurationBuilder): void;
 }
 
 export interface DonationMessage {
