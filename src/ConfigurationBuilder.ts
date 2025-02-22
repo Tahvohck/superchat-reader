@@ -10,8 +10,9 @@ export class ConfigurationBuilder {
      * @param label The text to display next to the checkbox
      * @param callback A function to be called when the value changes
      */
-    addCheckbox(label: string, callback: (newValue: boolean) => void) {
+    addCheckbox(label: string, callback: (newValue: boolean) => void): this {
         this.elements.push(new ConfigCheckbox(label, callback));
+        return this;
     }
 
     /**
@@ -28,8 +29,9 @@ export class ConfigurationBuilder {
         step = 1,
         defaultVal: number | null = null,
         callback: (newValue: number) => void,
-    ) {
+    ): this {
         this.elements.push(new ConfigSlider(label, min, max, step, defaultVal, callback));
+        return this;
     }
 
     /**
@@ -45,8 +47,9 @@ export class ConfigurationBuilder {
         defaultVal: string,
         callback: (newValue: string) => void,
         validate: (newValue: string) => string = (v) => v,
-    ) {
+    ): this {
         this.elements.push(new ConfigTextBox(label, defaultVal, callback, validate));
+        return this;
     }
 
     /**
@@ -54,8 +57,9 @@ export class ConfigurationBuilder {
      * @param label The text to display on the button
      * @param callback The function to call when the button is clicked
      */
-    addButton(label: string, callback: () => void) {
+    addButton(label: string, callback: () => void): this {
         this.elements.push(new ConfigButton(label, callback));
+        return this;
     }
 
     /**
