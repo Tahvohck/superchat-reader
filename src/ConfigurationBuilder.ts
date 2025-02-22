@@ -79,15 +79,6 @@ export class ConfigurationBuilder {
     }
 }
 
-/** Possible types of configuration elements */
-enum ConfigTypes {
-    base = 'base',
-    checkbox = 'checkbox',
-    slider = 'slider',
-    textbox = 'textbox',
-    button = 'button',
-}
-
 const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text();
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text();
 const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text();
@@ -95,8 +86,6 @@ const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
 
 /** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
-    /** Element type */
-    abstract readonly type: ConfigTypes;
     /**
      * HTML snippet that defines the rendered config element. Has keys like {label} that will be replaced
      * during the render phase.
@@ -138,7 +127,6 @@ abstract class ConfigElementBase {
 
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox extends ConfigElementBase {
-    type = ConfigTypes.checkbox;
     snippet = CheckboxHtmlSnippet;
 
     constructor(label: string, readonly callback: (newValue: boolean) => void) {
@@ -155,7 +143,6 @@ export class ConfigCheckbox extends ConfigElementBase {
 
 /** Dynamically handled slider for configuration */
 export class ConfigSlider extends ConfigElementBase {
-    type = ConfigTypes.slider;
     snippet = SliderHtmlSnippet;
 
     constructor(
@@ -185,7 +172,6 @@ export class ConfigSlider extends ConfigElementBase {
 
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox extends ConfigElementBase {
-    type = ConfigTypes.textbox;
     snippet = TextboxHtmlSnippet;
 
     constructor(
@@ -208,7 +194,6 @@ export class ConfigTextBox extends ConfigElementBase {
 
 /** Dynamically handled button for configuration */
 export class ConfigButton extends ConfigElementBase {
-    override type = ConfigTypes.button;
     snippet = ButtonHtmlSnippet;
 
     constructor(label: string, readonly callback: () => void) {
