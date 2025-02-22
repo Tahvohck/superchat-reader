@@ -12,6 +12,7 @@ import { code } from 'currency-codes';
 import { getCurrencyCodeFromString } from '@/CurrencyConversion.ts';
 
 export class YouTubeDonationProvider implements DonationProvider {
+    id = 'youtube';
     name = 'YouTube';
     version = '0.0.1';
 
@@ -113,6 +114,13 @@ export class YouTubeDonationProvider implements DonationProvider {
     }
 
     configure(cb: ConfigurationBuilder): void {
+        cb.addTextBox(
+            "Stream ID",
+            "Stream ID",
+            (newValue) => {
+                this.config.streamId = newValue;
+            },
+        );
     }
 }
 
