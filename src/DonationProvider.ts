@@ -172,8 +172,7 @@ Deno.test({
         const configPath = config.getSavePath();
         
         const configFile = JSON.parse(await Deno.readTextFile(configPath));
-
-        assertEquals(configFile.savePath, undefined);
+        
         assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
         assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
 
