@@ -49,6 +49,9 @@ export enum DonationClass {
     Red5,
 }
 
+const SHOULD_SAVE = Symbol("shouldSave");
+const SAVE_PATH = Symbol("savePath");
+
 /**
  * Base class for all provider configs.
  *
@@ -75,14 +78,17 @@ export class ProviderConfig {
     /**
      * Internally used to keep track of whether a save/load is currently in progress.
      */
-    private shouldSave = false;
+    private [SHOULD_SAVE] = false;
+    protected [SAVE_PATH]: string;
 
-    constructor(protected savePath: string) {
+    constructor(savePath: string) {
+        this[SAVE_PATH] = savePath;
         return new Proxy(this, {
             set: (target, prop, value) => {
                 target[prop as keyof typeof target] = value;
-                if (prop === 'shouldSave') return true;
-                if (target.shouldSave) target.save();
+                // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
+                if (typeof prop === "symbol") return true;
+                if (target[SHOULD_SAVE]) target.save();
                 return true;
             },
         });
@@ -93,21 +99,19 @@ export class ProviderConfig {
      * This is automatically called every time a property is set.
      */
     public save(): void {
-        this.shouldSave = false;
+        this[SHOULD_SAVE] = false;
         const copy = structuredClone(this);
-        Reflect.deleteProperty(copy, 'savePath');
-        Reflect.deleteProperty(copy, 'shouldSave');
 
         const savePath = this.getSavePath();
 
         // ensure config folder exists
         Deno.mkdirSync(ProviderConfig.configPath, { recursive: true });
         Deno.writeTextFileSync(savePath, JSON.stringify(copy));
-        this.shouldSave = true;
+        this[SHOULD_SAVE] = true;
     }
 
     private getSavePath(): string {
-        return join(ProviderConfig.configPath, this.savePath);
+        return join(ProviderConfig.configPath, this[SAVE_PATH]);
     }
 
     /**
@@ -124,7 +128,7 @@ export class ProviderConfig {
         P extends ConstructorParameters<C>,
     >(constructor: C, ...args: P): Promise<InstanceType<C>> {
         const config = new constructor(...args) as InstanceType<C>;
-        config.shouldSave = false;
+        config[SHOULD_SAVE] = false;
 
         try {
             const savePath = config.getSavePath();
@@ -135,13 +139,13 @@ export class ProviderConfig {
                 Reflect.set(config as object, key, value);
             }
 
-            config.shouldSave = true;
+            config[SHOULD_SAVE] = true;
 
             return config;
         } catch (error) {
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
-            config.shouldSave = true;
+            config[SHOULD_SAVE] = true;
             return config;
         }
     }
