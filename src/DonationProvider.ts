@@ -224,8 +224,8 @@ abstract class ConfigElementBase {
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
     /** Function to be called when the element is interacted with */
-    // deno-lint-ignore ban-types
-    abstract readonly callback: Function;
+    // deno-lint-ignore no-explicit-any
+    abstract readonly callback: (...args: any[]) => void;
 
     /**
      * @param label Element label, typically displayed next to the element
