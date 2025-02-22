@@ -49,8 +49,8 @@ export enum DonationClass {
     Red5,
 }
 
-const SHOULD_SAVE = Symbol("shouldSave");
-const SAVE_PATH = Symbol("savePath");
+const SHOULD_SAVE = Symbol('shouldSave');
+const SAVE_PATH = Symbol('savePath');
 
 /**
  * Base class for all provider configs.
@@ -87,7 +87,7 @@ export class ProviderConfig {
             set: (target, prop, value) => {
                 target[prop as keyof typeof target] = value;
                 // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
-                if (typeof prop === "symbol") return true;
+                if (typeof prop === 'symbol') return true;
                 if (target[SHOULD_SAVE]) target.save();
                 return true;
             },
@@ -151,7 +151,6 @@ export class ProviderConfig {
     }
 }
 
-
 class TestConfig extends ProviderConfig {
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
@@ -166,13 +165,13 @@ Deno.test({
     fn: async () => {
         const config = await ProviderConfig.load(TestConfig);
 
-        config.test = "tested";
+        config.test = 'tested';
 
         // @ts-expect-error accessing private method for testing reasons
         const configPath = config.getSavePath();
-        
+
         const configFile = JSON.parse(await Deno.readTextFile(configPath));
-        
+
         assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
         assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
 
@@ -185,7 +184,7 @@ Deno.test({
     name: 'ProviderConfig: load',
     fn: async () => {
         const exampleConfig = {
-            test: "tested",
+            test: 'tested',
         };
 
         const configPath = join(ProviderConfig.configPath, 'test.json');
@@ -193,11 +192,11 @@ Deno.test({
 
         const config = await ProviderConfig.load(TestConfig);
 
-        assertEquals(config.test, exampleConfig.test, "property with default value not overwritten by config file.");
+        assertEquals(config.test, exampleConfig.test, 'property with default value not overwritten by config file.');
         assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
 
         await Deno.remove(configPath);
-    }
+    },
 });
 
 Deno.test({
@@ -205,16 +204,16 @@ Deno.test({
     fn: async () => {
         class TestConfig extends ProviderConfig {
             constructor(public readonly thing: number) {
-                super("test.json");
+                super('test.json');
             }
         }
 
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments
         await ProviderConfig.load(TestConfig);
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-        await ProviderConfig.load(TestConfig, "hello, world!");
+        await ProviderConfig.load(TestConfig, 'hello, world!');
 
         const config = await ProviderConfig.load(TestConfig, 1);
-        assertEquals(config.thing, 1, "argument not passed to constructor.");
-    }
+        assertEquals(config.thing, 1, 'argument not passed to constructor.');
+    },
 });
