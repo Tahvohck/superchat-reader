@@ -58,7 +58,7 @@ export enum DonationClass {
  *      constructor(public readonly hello: string) {
  *
  *      }
- * 
+ *
  *      public example = "Hello World!";
  *      public another = 123;
  * }
@@ -81,7 +81,7 @@ export class ProviderConfig {
         return new Proxy(this, {
             set: (target, prop, value) => {
                 target[prop as keyof typeof target] = value;
-                if (prop === "shouldSave") return true;
+                if (prop === 'shouldSave') return true;
                 if (target.shouldSave) target.save();
                 return true;
             },
@@ -117,11 +117,15 @@ export class ProviderConfig {
      * @param savePath Path to load config from
      * @param constructor Config class to construct
      */
-    // deno-lint-ignore no-explicit-any
-    public static async load<T extends ProviderConfig, C extends new (...args: any[]) => T, P extends ConstructorParameters<C>>(constructor: C, ...args: P): Promise<InstanceType<C>> {
+    public static async load<
+        T extends ProviderConfig,
+        // deno-lint-ignore no-explicit-any
+        C extends new (...args: any[]) => T,
+        P extends ConstructorParameters<C>,
+    >(constructor: C, ...args: P): Promise<InstanceType<C>> {
         const config = new constructor(...args) as InstanceType<C>;
         config.shouldSave = false;
-        
+
         try {
             const savePath = config.getSavePath();
 
@@ -143,34 +147,34 @@ export class ProviderConfig {
 }
 
 Deno.test({
-    name: "ProviderConfig",
+    name: 'ProviderConfig',
     fn: async () => {
         class TestConfig extends ProviderConfig {
-            public example = "Hello, world!";
+            public example = 'Hello, world!';
 
             constructor(public test: string) {
                 super('test.json');
             }
         }
 
-        const config = await ProviderConfig.load(TestConfig, "test");
+        const config = await ProviderConfig.load(TestConfig, 'test');
 
-        assertEquals(config.test, "test");
+        assertEquals(config.test, 'test');
 
-        config.test = "tested";
+        config.test = 'tested';
 
-        assertEquals(config.test, "tested");
+        assertEquals(config.test, 'tested');
 
         const configFile = JSON.parse(await Deno.readTextFile(join(ProviderConfig.configPath, 'test.json')));
 
         assertEquals(configFile.savePath, undefined);
-        assertEquals(configFile.test, "tested", "value in config file does not reflect changed value.");
-        assertEquals(configFile.example, "Hello, world!", "value in config file does not reflect unchanged value.");
+        assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
+        assertEquals(configFile.example, 'Hello, world!', 'value in config file does not reflect unchanged value.');
 
-        const loadedConfig = await ProviderConfig.load(TestConfig, "test");
-        assertEquals(loadedConfig.test, "tested", "changed value in config file not properly set on load.");
+        const loadedConfig = await ProviderConfig.load(TestConfig, 'test');
+        assertEquals(loadedConfig.test, 'tested', 'changed value in config file not properly set on load.');
 
         // cleanup
         await Deno.remove(join(ProviderConfig.configPath, 'test.json'));
-    }
+    },
 });

@@ -24,7 +24,7 @@ export class YouTubeDonationProvider implements DonationProvider {
 
     async activate(): Promise<boolean> {
         try {
-            this.config = await ProviderConfig.load(YouTubeConfig, "youtube.js");
+            this.config = await ProviderConfig.load(YouTubeConfig, 'youtube.js');
             await this.client.init();
 
             this.shouldStop = false;
