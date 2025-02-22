@@ -213,7 +213,12 @@ const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
 abstract class ConfigElementBase {
     /** Element type */
     abstract readonly type: ConfigTypes;
+    /**
+     * HTML snippet that defines the rendered config element. Has keys like {label} that will be replaced
+     * during the render phase.
+     */
     abstract readonly snippet: string
+    /** Dictionary of replacements to perform on the HTML snippet. */
     readonly replacementKeys: { [x: string]: string | number };
     readonly replacementRegex: RegExp;
     /** Unique ID to assign to webUI bindings */
@@ -224,7 +229,8 @@ abstract class ConfigElementBase {
 
     /**
      * @param label Element label, typically displayed next to the element
-     * @param replaceObject
+     * @param replaceObject Map of key-value pairs to replace inside the snippet. {label} and {callbackID} are
+     * automatically provided.
      */
     constructor(label: string, replaceObject: { [x: string]: string | number } = {}) {
         this.callbackIdentifier = crypto.randomUUID().replaceAll('-', '_');
