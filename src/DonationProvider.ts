@@ -147,35 +147,71 @@ export class ProviderConfig {
     }
 }
 
+
+class TestConfig extends ProviderConfig {
+    public test = 'Hello, world!';
+    public unchanged = 'unchanged';
+
+    constructor() {
+        super('test.json');
+    }
+}
+
 Deno.test({
-    name: 'ProviderConfig',
+    name: 'ProviderConfig: save',
     fn: async () => {
-        class TestConfig extends ProviderConfig {
-            public example = 'Hello, world!';
+        const config = await ProviderConfig.load(TestConfig);
 
-            constructor(public test: string) {
-                super('test.json');
-            }
-        }
+        config.test = "tested";
 
-        const config = await ProviderConfig.load(TestConfig, 'test');
-
-        assertEquals(config.test, 'test');
-
-        config.test = 'tested';
-
-        assertEquals(config.test, 'tested');
-
-        const configFile = JSON.parse(await Deno.readTextFile(join(ProviderConfig.configPath, 'test.json')));
+        // @ts-expect-error accessing private method for testing reasons
+        const configPath = config.getSavePath();
+        
+        const configFile = JSON.parse(await Deno.readTextFile(configPath));
 
         assertEquals(configFile.savePath, undefined);
         assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
-        assertEquals(configFile.example, 'Hello, world!', 'value in config file does not reflect unchanged value.');
-
-        const loadedConfig = await ProviderConfig.load(TestConfig, 'test');
-        assertEquals(loadedConfig.test, 'tested', 'changed value in config file not properly set on load.');
+        assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
 
         // cleanup
-        await Deno.remove(join(ProviderConfig.configPath, 'test.json'));
+        await Deno.remove(configPath);
     },
+});
+
+Deno.test({
+    name: 'ProviderConfig: load',
+    fn: async () => {
+        const exampleConfig = {
+            test: "tested",
+        };
+
+        const configPath = join(ProviderConfig.configPath, 'test.json');
+        await Deno.writeTextFile(configPath, JSON.stringify(exampleConfig));
+
+        const config = await ProviderConfig.load(TestConfig);
+
+        assertEquals(config.test, exampleConfig.test, "property with default value not overwritten by config file.");
+        assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
+
+        await Deno.remove(configPath);
+    }
+});
+
+Deno.test({
+    name: 'ProviderConfig: construct with additional arguments',
+    fn: async () => {
+        class TestConfig extends ProviderConfig {
+            constructor(public readonly thing: number) {
+                super("test.json");
+            }
+        }
+
+        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
+        await ProviderConfig.load(TestConfig);
+        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
+        await ProviderConfig.load(TestConfig, "hello, world!");
+
+        const config = await ProviderConfig.load(TestConfig, 1);
+        assertEquals(config.thing, 1, "argument not passed to constructor.");
+    }
 });
