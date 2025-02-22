@@ -141,6 +141,7 @@ export class ProviderConfig {
         } catch (error) {
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
+            config.shouldSave = true;
             return config;
         }
     }
