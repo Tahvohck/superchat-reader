@@ -1,4 +1,5 @@
-import { ConfigurationBuilder, DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
+import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
+import { DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';

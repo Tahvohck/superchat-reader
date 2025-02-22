@@ -1,5 +1,5 @@
+import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
 import {
-    ConfigurationBuilder,
     DonationClass,
     DonationMessage,
     DonationProvider,
