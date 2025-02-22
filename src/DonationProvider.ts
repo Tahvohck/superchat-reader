@@ -213,6 +213,7 @@ const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
 abstract class ConfigElementBase {
     /** Element type */
     abstract readonly type: ConfigTypes;
+    abstract readonly snippet: string
     readonly replacementKeys: { [x: string]: string | number };
     readonly replacementRegex: RegExp;
     /** Unique ID to assign to webUI bindings */
@@ -236,28 +237,7 @@ abstract class ConfigElementBase {
 
     /** Render the element to HTML */
     render(): string {
-        let snippet;
-        switch (this.type) {
-            case ConfigTypes.base: {
-                throw new Error('Base config type is not renderable!');
-            }
-            case ConfigTypes.checkbox: {
-                snippet = CheckboxHtmlSnippet;
-                break;
-            }
-            case ConfigTypes.slider: {
-                snippet = SliderHtmlSnippet;
-                break;
-            }
-            case ConfigTypes.textbox: {
-                snippet = TextboxHtmlSnippet;
-                break;
-            }
-            case ConfigTypes.button: {
-                snippet = ButtonHtmlSnippet;
-            }
-        }
-        return snippet.replaceAll(this.replacementRegex, (str) => {
+        return this.snippet.replaceAll(this.replacementRegex, (str) => {
             str = str.replaceAll(/[{}]/g, '');
             return String(this.replacementKeys[str]!);
         });
@@ -269,6 +249,7 @@ abstract class ConfigElementBase {
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox extends ConfigElementBase {
     type = ConfigTypes.checkbox;
+    snippet = CheckboxHtmlSnippet;
 
     constructor(label: string, readonly callback: (newValue: boolean) => void) {
         super(label);
@@ -285,6 +266,7 @@ export class ConfigCheckbox extends ConfigElementBase {
 /** Dynamically handled slider for configuration */
 export class ConfigSlider extends ConfigElementBase {
     type = ConfigTypes.slider;
+    snippet = SliderHtmlSnippet;
 
     constructor(
         label: string,
@@ -314,6 +296,7 @@ export class ConfigSlider extends ConfigElementBase {
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox extends ConfigElementBase {
     type = ConfigTypes.textbox;
+    snippet = TextboxHtmlSnippet;
 
     constructor(
         label: string,
@@ -336,6 +319,7 @@ export class ConfigTextBox extends ConfigElementBase {
 /** Dynamically handled button for configuration */
 export class ConfigButton extends ConfigElementBase {
     override type = ConfigTypes.button;
+    snippet = ButtonHtmlSnippet;
 
     constructor(label: string, readonly callback: () => void) {
         super(label);
