@@ -3,9 +3,7 @@ import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@/ImageCache.ts';
 import { code } from 'currency-codes';
-import currencyCodeMap from 'currency-symbol-map/map.js';
-
-const reverseCurrencyCodeMap = Object.fromEntries(Object.entries(currencyCodeMap).map(([key, value]) => [value, key]));
+import { getCurrencyCodeFromString } from '@/CurrencyConversion.ts';
 
 export class YouTubeDonationProvider implements DonationProvider {
     name = 'YouTube';
@@ -26,7 +24,7 @@ export class YouTubeDonationProvider implements DonationProvider {
 
     async activate(): Promise<boolean> {
         try {
-            this.config = await ProviderConfig.load('youtube.json', YouTubeConfig);
+            this.config = await ProviderConfig.load(YouTubeConfig, "youtube.js");
             await this.client.init();
 
             this.shouldStop = false;
@@ -84,11 +82,11 @@ export class YouTubeDonationProvider implements DonationProvider {
                 donationMessage.messageType = 'text';
                 donationMessage.donationAmount = message.amount;
 
-                const currencyCode = reverseCurrencyCodeMap[message.currency];
+                const currencyCode = getCurrencyCodeFromString(message.currency);
                 if (!currencyCode) {
                     throw new Error('SHIT FUCK SHIT SHIT FUCK');
                 }
-                donationMessage.donationCurrency = code(currencyCode);
+                donationMessage.donationCurrency = currencyCode;
                 // temporarily set to blue while we figure out details of `DonationClass`
                 donationMessage.donationClass = DonationClass.Blue;
                 break;
