@@ -11,7 +11,6 @@ export class DemoProvider implements DonationProvider {
 
     messages: DonationMessage[] = [];
     active = false;
-    delay = 1000;
 
     config!: DemoConfig;
 
@@ -34,7 +33,7 @@ export class DemoProvider implements DonationProvider {
 
     async *process() {
         while (this.active) {
-            await sleep(this.delay);
+            await sleep(this.config.delay);
             if (!this.active) {
                 return;
             }
@@ -68,4 +67,5 @@ class DemoConfig extends ProviderConfig{
     demoUsername = 'Demo User';
     minWords = 5;
     maxWords = 25;
+    delay = 1000;
 }
