@@ -9,7 +9,7 @@ const usdToPhp = convertCurrency(1, code('USD'), code('PHP'))
 console.log(`1 USD is ${usdToPhp} PHP`);
 
 const prov = new DemoProvider();
-prov.activate();
+await prov.activate();
 setTimeout(() => {
     prov.deactivate();
 }, 5000);

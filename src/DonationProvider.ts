@@ -51,7 +51,7 @@ export enum DonationClass {
 }
 
 const SHOULD_SAVE = Symbol('shouldSave');
-const SAVE_PATH = Symbol('savePath');
+export const SAVE_PATH = Symbol('savePath');
 
 /**
  * Base class for all provider configs.
@@ -73,20 +73,37 @@ const SAVE_PATH = Symbol('savePath');
  * config.example = "Goodbye World!";
  * ```
  */
-export class ProviderConfig {
+export abstract class ProviderConfig {
     static configPath = join(Deno.cwd(), 'config');
 
     /**
      * Internally used to keep track of whether a save/load is currently in progress.
      */
     private [SHOULD_SAVE] = false;
-    protected [SAVE_PATH]: string;
+    /**
+     * Filename to save config to. Readonly is enforced at Proxy-set level, it must be defined at the class level.
+     */
+    protected abstract [SAVE_PATH]: string;
 
-    constructor(savePath: string) {
-        this[SAVE_PATH] = savePath;
+    constructor() {
         return new Proxy(this, {
             set: (target, prop, value) => {
-                target[prop as keyof typeof target] = value;
+                // Enforce CCTOR-only setting of SAVE_PATH
+                if (target[SAVE_PATH] && prop == SAVE_PATH) {
+                    throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
+                }
+                // Store the current value.
+                const oldvalue = target[prop as keyof typeof target]
+                try {
+                    // Set the value (can't forget to do that)
+                    target[prop as keyof typeof target] = value;
+                    target.validate()
+                } catch (e) {
+                    // Validation failed. Reset to old value, print the error to the console, and return false
+                    target[prop as keyof typeof target] = oldvalue
+                    console.error((e as Error).message)
+                    return false
+                }
                 // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
                 if (typeof prop === 'symbol') return true;
                 if (target[SHOULD_SAVE]) target.save();
@@ -100,15 +117,11 @@ export class ProviderConfig {
      * This is automatically called every time a property is set.
      */
     public save(): void {
-        this[SHOULD_SAVE] = false;
-        const copy = structuredClone(this);
-
         const savePath = this.getSavePath();
 
         // ensure config folder exists
         Deno.mkdirSync(ProviderConfig.configPath, { recursive: true });
-        Deno.writeTextFileSync(savePath, JSON.stringify(copy));
-        this[SHOULD_SAVE] = true;
+        Deno.writeTextFileSync(savePath, JSON.stringify(this, undefined, 2));
     }
 
     private getSavePath(): string {
@@ -128,37 +141,42 @@ export class ProviderConfig {
         C extends new (...args: any[]) => T,
         P extends ConstructorParameters<C>,
     >(constructor: C, ...args: P): Promise<InstanceType<C>> {
+        // Create a new config object to load onto
         const config = new constructor(...args) as InstanceType<C>;
+        const savePath = config.getSavePath();
+        // Disable saving while loading the file so we don't overwrite anything.
         config[SHOULD_SAVE] = false;
 
         try {
-            const savePath = config.getSavePath();
-
             const json = JSON.parse(await Deno.readTextFile(savePath));
-
             for (const [key, value] of Object.entries(json)) {
                 Reflect.set(config as object, key, value);
             }
-
-            config[SHOULD_SAVE] = true;
-
-            return config;
         } catch (error) {
+            // TODO never fix this typo
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
-            config[SHOULD_SAVE] = true;
-            return config;
+            config.save()
         }
+        config.validate()
+
+        // We're done setting up, re-enable saving.
+        config[SHOULD_SAVE] = true;
+        return config;
     }
+
+    /**
+     * Check that the config file is valid. Throw an error if not.
+     */
+    abstract validate(): void
 }
 
 class TestConfig extends ProviderConfig {
+    [SAVE_PATH] = 'test.json';
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
 
-    constructor() {
-        super('test.json');
-    }
+    validate() {}
 }
 
 Deno.test({
@@ -204,9 +222,11 @@ Deno.test({
     name: 'ProviderConfig: construct with additional arguments',
     fn: async () => {
         class TestConfig extends ProviderConfig {
+            [SAVE_PATH] = 'test.json';
             constructor(public readonly thing: number) {
-                super('test.json');
+                super();
             }
+            validate() {}
         }
 
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments

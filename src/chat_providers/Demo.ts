@@ -1,8 +1,10 @@
 import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
+import { DonationClass, DonationMessage, DonationProvider, ProviderConfig, SAVE_PATH } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
+import { join } from '@std/path/join';
+import { assertThrows } from '@std/assert/throws';
 
 export class DemoProvider implements DonationProvider {
     readonly name = 'Demo Provider';
@@ -10,11 +12,11 @@ export class DemoProvider implements DonationProvider {
 
     messages: DonationMessage[] = [];
     active = false;
-    delay = 1000;
 
-    config = new DemoConfig();
+    config!: DemoConfig;
 
-    activate() {
+    async activate() {
+        this.config = await ProviderConfig.load(DemoConfig)
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
@@ -32,7 +34,7 @@ export class DemoProvider implements DonationProvider {
 
     async *process() {
         while (this.active) {
-            await sleep(this.delay);
+            await sleep(this.config.delay);
             if (!this.active) {
                 return;
             }
@@ -61,8 +63,63 @@ export class DemoProvider implements DonationProvider {
     }
 }
 
-class DemoConfig {
+class DemoConfig extends ProviderConfig{
+    [SAVE_PATH] = "demo.json";
     demoUsername = 'Demo User';
     minWords = 5;
     maxWords = 25;
+    delay = 1000;
+
+    validate() {
+        if (this.minWords >= this.maxWords) {
+            throw new Error(this.constructor.name + ": minWords must be < maxword")
+        }
+        if (this.delay < 100) {
+            throw new Error(this.constructor.name + ": Delay < 100ms is too fast. Refusing.")
+        }
+    }
 }
+
+const testPrefix = "DemoProvider:"
+Deno.test(`${testPrefix} Setup`, () => {
+    ProviderConfig.configPath = join(Deno.cwd(), 'test-output')
+    const savedFile = join(ProviderConfig.configPath, new DemoConfig()[SAVE_PATH])
+    try {
+        Deno.removeSync(savedFile)
+    } catch {
+        // failing to remove the file is fine (it might not exist yet)
+    }
+})
+
+Deno.test(`${testPrefix} configuration file automatic creation`, async ()=> {
+    await DemoConfig.load(DemoConfig)
+})
+
+Deno.test(`${testPrefix} configuration file loading`, async ()=> {
+    await DemoConfig.load(DemoConfig)
+})
+
+Deno.test(`${testPrefix} configuration file saving`, async ()=> {
+    const config = await DemoConfig.load(DemoConfig);
+    const savedFile = join(ProviderConfig.configPath, config[SAVE_PATH])
+    Deno.removeSync(savedFile)
+    config.save()
+    // confirm the file exists
+    Deno.lstatSync(savedFile)
+})
+
+Deno.test(`${testPrefix} configuration fails validation`, async () => {
+    const config = await DemoConfig.load(DemoConfig)
+    assertThrows(() => {
+        config.maxWords = config.minWords - 1  
+    })
+})
+
+Deno.test(`${testPrefix} Can activate DemoProvider`, async () => {
+    const prov = new DemoProvider()
+    await prov.activate()
+})
+
+Deno.test(`${testPrefix} Teardown`, () => {
+    Deno.removeSync(ProviderConfig.configPath, {recursive: true})
+})
