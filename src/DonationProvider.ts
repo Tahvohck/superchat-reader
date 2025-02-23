@@ -101,13 +101,11 @@ export class ProviderConfig {
      * This is automatically called every time a property is set.
      */
     public save(): void {
-        this[SHOULD_SAVE] = false;
         const savePath = this.getSavePath();
 
         // ensure config folder exists
         Deno.mkdirSync(ProviderConfig.configPath, { recursive: true });
         Deno.writeTextFileSync(savePath, JSON.stringify(this, undefined, 2));
-        this[SHOULD_SAVE] = true;
     }
 
     private getSavePath(): string {
