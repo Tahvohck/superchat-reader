@@ -51,7 +51,7 @@ export enum DonationClass {
 }
 
 const SHOULD_SAVE = Symbol('shouldSave');
-const SAVE_PATH = Symbol('savePath');
+export const SAVE_PATH = Symbol('savePath');
 
 /**
  * Base class for all provider configs.
@@ -73,19 +73,24 @@ const SAVE_PATH = Symbol('savePath');
  * config.example = "Goodbye World!";
  * ```
  */
-export class ProviderConfig {
+export abstract class ProviderConfig {
     static configPath = join(Deno.cwd(), 'config');
 
     /**
      * Internally used to keep track of whether a save/load is currently in progress.
      */
     private [SHOULD_SAVE] = false;
-    protected [SAVE_PATH]: string;
+    /**
+     * Filename to save config to. Readonly is enforced at Proxy-set level, it must be defined at the class level.
+     */
+    protected abstract [SAVE_PATH]: string;
 
-    constructor(savePath: string) {
-        this[SAVE_PATH] = savePath;
+    constructor() {
         return new Proxy(this, {
             set: (target, prop, value) => {
+                if (target[SAVE_PATH] && prop == SAVE_PATH) {
+                    throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
+                }
                 target[prop as keyof typeof target] = value;
                 // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
                 if (typeof prop === 'symbol') return true;
@@ -146,12 +151,9 @@ export class ProviderConfig {
 }
 
 class TestConfig extends ProviderConfig {
+    [SAVE_PATH] = 'test.json';
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
-
-    constructor() {
-        super('test.json');
-    }
 }
 
 Deno.test({
@@ -197,8 +199,9 @@ Deno.test({
     name: 'ProviderConfig: construct with additional arguments',
     fn: async () => {
         class TestConfig extends ProviderConfig {
+            [SAVE_PATH] = 'test.json';
             constructor(public readonly thing: number) {
-                super('test.json');
+                super();
             }
         }
 
