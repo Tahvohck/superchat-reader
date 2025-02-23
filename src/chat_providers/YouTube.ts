@@ -1,5 +1,11 @@
-import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider, ProviderConfig } from '@app/DonationProvider.ts';
+import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
+import {
+    DonationClass,
+    DonationMessage,
+    DonationProvider,
+    ProviderConfig,
+    SAVE_PATH,
+} from '@/DonationProvider.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
@@ -26,7 +32,7 @@ export class YouTubeDonationProvider implements DonationProvider {
 
     async activate(): Promise<boolean> {
         try {
-            this.config = await ProviderConfig.load(YouTubeConfig, 'youtube.json');
+            this.config = await ProviderConfig.load(YouTubeConfig);
             await this.client.init();
 
             this.shouldStop = false;
@@ -113,5 +119,6 @@ export class YouTubeDonationProvider implements DonationProvider {
 }
 
 export class YouTubeConfig extends ProviderConfig {
+    [SAVE_PATH] = "youtube.json"
     public streamId?: string;
 }
