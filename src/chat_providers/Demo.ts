@@ -1,5 +1,5 @@
 import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider } from '@/DonationProvider.ts';
+import { DonationClass, DonationMessage, DonationProvider, ProviderConfig, SAVE_PATH } from '@/DonationProvider.ts';
 import { sleep } from '@/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
@@ -12,9 +12,10 @@ export class DemoProvider implements DonationProvider {
     active = false;
     delay = 1000;
 
-    config = new DemoConfig();
+    config!: DemoConfig;
 
-    activate() {
+    async activate() {
+        this.config = await ProviderConfig.load(DemoConfig)
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
@@ -61,7 +62,8 @@ export class DemoProvider implements DonationProvider {
     }
 }
 
-class DemoConfig {
+class DemoConfig extends ProviderConfig{
+    [SAVE_PATH] = "demo.json";
     demoUsername = 'Demo User';
     minWords = 5;
     maxWords = 25;
