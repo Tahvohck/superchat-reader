@@ -88,9 +88,11 @@ export abstract class ProviderConfig {
     constructor() {
         return new Proxy(this, {
             set: (target, prop, value) => {
+                // Enforce CCTOR-only setting of SAVE_PATH
                 if (target[SAVE_PATH] && prop == SAVE_PATH) {
                     throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
                 }
+                // Set the value (can't forget to do that)
                 target[prop as keyof typeof target] = value;
                 // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
                 if (typeof prop === 'symbol') return true;
@@ -129,8 +131,10 @@ export abstract class ProviderConfig {
         C extends new (...args: any[]) => T,
         P extends ConstructorParameters<C>,
     >(constructor: C, ...args: P): Promise<InstanceType<C>> {
+        // Create a new config object to load onto
         const config = new constructor(...args) as InstanceType<C>;
         const savePath = config.getSavePath();
+        // Disable saving while loading the file so we don't overwrite anything.
         config[SHOULD_SAVE] = false;
 
         try {
@@ -145,6 +149,7 @@ export abstract class ProviderConfig {
             config.save()
         }
 
+        // We're done setting up, re-enable saving.
         config[SHOULD_SAVE] = true;
         return config;
     }
