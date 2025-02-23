@@ -92,8 +92,18 @@ export abstract class ProviderConfig {
                 if (target[SAVE_PATH] && prop == SAVE_PATH) {
                     throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
                 }
-                // Set the value (can't forget to do that)
-                target[prop as keyof typeof target] = value;
+                // Store the current value.
+                const oldvalue = target[prop as keyof typeof target]
+                try {
+                    // Set the value (can't forget to do that)
+                    target[prop as keyof typeof target] = value;
+                    target.validate()
+                } catch (e) {
+                    // Validation failed. Reset to old value, print the error to the console, and return false
+                    target[prop as keyof typeof target] = oldvalue
+                    console.error((e as Error).message)
+                    return false
+                }
                 // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
                 if (typeof prop === 'symbol') return true;
                 if (target[SHOULD_SAVE]) target.save();
@@ -148,17 +158,25 @@ export abstract class ProviderConfig {
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
             config.save()
         }
+        config.validate()
 
         // We're done setting up, re-enable saving.
         config[SHOULD_SAVE] = true;
         return config;
     }
+
+    /**
+     * Check that the config file is valid. Throw an error if not.
+     */
+    abstract validate(): void
 }
 
 class TestConfig extends ProviderConfig {
     [SAVE_PATH] = 'test.json';
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
+
+    validate() {}
 }
 
 Deno.test({
@@ -208,6 +226,7 @@ Deno.test({
             constructor(public readonly thing: number) {
                 super();
             }
+            validate() {}
         }
 
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments
