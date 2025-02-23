@@ -101,13 +101,11 @@ export class ProviderConfig {
      */
     public save(): void {
         this[SHOULD_SAVE] = false;
-        const copy = structuredClone(this);
-
         const savePath = this.getSavePath();
 
         // ensure config folder exists
         Deno.mkdirSync(ProviderConfig.configPath, { recursive: true });
-        Deno.writeTextFileSync(savePath, JSON.stringify(copy));
+        Deno.writeTextFileSync(savePath, JSON.stringify(this, undefined, 2));
         this[SHOULD_SAVE] = true;
     }
 
@@ -129,26 +127,22 @@ export class ProviderConfig {
         P extends ConstructorParameters<C>,
     >(constructor: C, ...args: P): Promise<InstanceType<C>> {
         const config = new constructor(...args) as InstanceType<C>;
+        const savePath = config.getSavePath();
         config[SHOULD_SAVE] = false;
 
         try {
-            const savePath = config.getSavePath();
-
             const json = JSON.parse(await Deno.readTextFile(savePath));
-
             for (const [key, value] of Object.entries(json)) {
                 Reflect.set(config as object, key, value);
             }
-
-            config[SHOULD_SAVE] = true;
-
-            return config;
         } catch (error) {
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
-            config[SHOULD_SAVE] = true;
-            return config;
+            config.save()
         }
+
+        config[SHOULD_SAVE] = true;
+        return config;
     }
 }
 
