@@ -137,6 +137,7 @@ export class ProviderConfig {
                 Reflect.set(config as object, key, value);
             }
         } catch (error) {
+            // TODO never fix this typo
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
             config.save()
