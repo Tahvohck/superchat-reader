@@ -68,4 +68,13 @@ class DemoConfig extends ProviderConfig{
     minWords = 5;
     maxWords = 25;
     delay = 1000;
+
+    validate() {
+        if (this.minWords >= this.maxWords) {
+            throw new Error(this.constructor.name + ": minWords must be < maxword")
+        }
+        if (this.delay < 100) {
+            throw new Error(this.constructor.name + ": Delay < 100ms is too fast. Refusing.")
+        }
+    }
 }
