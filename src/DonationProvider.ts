@@ -180,64 +180,62 @@ class TestConfig extends ProviderConfig {
     validate() {}
 }
 
-if (import.meta.main) {
-    Deno.test({
-        name: 'ProviderConfig: save',
-        fn: async () => {
-            const config = await ProviderConfig.load(TestConfig);
+Deno.test({
+    name: 'ProviderConfig: save',
+    fn: async () => {
+        const config = await ProviderConfig.load(TestConfig);
 
-            config.test = 'tested';
+        config.test = 'tested';
 
-            // @ts-expect-error accessing private method for testing reasons
-            const configPath = config.getSavePath();
+        // @ts-expect-error accessing private method for testing reasons
+        const configPath = config.getSavePath();
 
-            const configFile = JSON.parse(await Deno.readTextFile(configPath));
+        const configFile = JSON.parse(await Deno.readTextFile(configPath));
 
-            assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
-            assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
+        assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
+        assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
 
-            // cleanup
-            await Deno.remove(configPath);
-        },
-    });
+        // cleanup
+        await Deno.remove(configPath);
+    },
+});
 
-    Deno.test({
-        name: 'ProviderConfig: load',
-        fn: async () => {
-            const exampleConfig = {
-                test: 'tested',
-            };
+Deno.test({
+    name: 'ProviderConfig: load',
+    fn: async () => {
+        const exampleConfig = {
+            test: 'tested',
+        };
 
-            const configPath = join(ProviderConfig.configPath, 'test.json');
-            await Deno.writeTextFile(configPath, JSON.stringify(exampleConfig));
+        const configPath = join(ProviderConfig.configPath, 'test.json');
+        await Deno.writeTextFile(configPath, JSON.stringify(exampleConfig));
 
-            const config = await ProviderConfig.load(TestConfig);
+        const config = await ProviderConfig.load(TestConfig);
 
-            assertEquals(config.test, exampleConfig.test, 'property with default value not overwritten by config file.');
-            assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
+        assertEquals(config.test, exampleConfig.test, 'property with default value not overwritten by config file.');
+        assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
 
-            await Deno.remove(configPath);
-        },
-    });
+        await Deno.remove(configPath);
+    },
+});
 
-    Deno.test({
-        name: 'ProviderConfig: construct with additional arguments',
-        fn: async () => {
-            class TestConfig extends ProviderConfig {
-                [SAVE_PATH] = 'test.json';
-                constructor(public readonly thing: number) {
-                    super();
-                }
-                validate() {}
+Deno.test({
+    name: 'ProviderConfig: construct with additional arguments',
+    fn: async () => {
+        class TestConfig extends ProviderConfig {
+            [SAVE_PATH] = 'test.json';
+            constructor(public readonly thing: number) {
+                super();
             }
+            validate() {}
+        }
 
-            // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-            await ProviderConfig.load(TestConfig);
-            // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-            await ProviderConfig.load(TestConfig, 'hello, world!');
+        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
+        await ProviderConfig.load(TestConfig);
+        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
+        await ProviderConfig.load(TestConfig, 'hello, world!');
 
-            const config = await ProviderConfig.load(TestConfig, 1);
-            assertEquals(config.thing, 1, 'argument not passed to constructor.');
-        },
-    });
-}
+        const config = await ProviderConfig.load(TestConfig, 1);
+        assertEquals(config.thing, 1, 'argument not passed to constructor.');
+    },
+});
