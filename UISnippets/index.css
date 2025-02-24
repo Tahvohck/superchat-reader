@@ -1,0 +1,52 @@
+html, body {
+    height: 100%
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    margin: 0px
+}
+
+#titlebar, #statusbar {
+    border-style: groove;
+    display: flex;
+    flex-direction: row;
+    background-color: lightgray;
+}
+
+p {
+    margin: 0.25em;
+}
+
+#content {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+#content > * {
+    flex-basis: 0;
+    padding: 0.25em;
+}
+
+#plugin-providers {
+    flex-grow: 1;
+    background-color: gray;
+    border-right: 1px solid black;
+}
+
+#plugin-config {
+    flex-grow: 2;
+    background-color: gray;
+    border-right: 1px solid black;
+}
+
+#message-container {
+    flex-grow: 3;
+    background-color: palegoldenrod;
+}
+
+#plugin-providers > * {
+    background-color: green;
+}
