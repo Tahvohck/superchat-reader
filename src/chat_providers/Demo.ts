@@ -1,6 +1,6 @@
-import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider, ProviderConfig, SAVE_PATH } from '@/DonationProvider.ts';
-import { sleep } from '@/util.ts';
+import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
+import { DonationClass, DonationMessage, DonationProvider, ProviderConfig, SAVE_PATH } from '@app/DonationProvider.ts';
+import { sleep } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 import { join } from '@std/path/join';
