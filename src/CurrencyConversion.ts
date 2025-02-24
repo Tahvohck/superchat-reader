@@ -2,7 +2,7 @@ import * as path from '@std/path';
 import { code } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
 import { assertEquals, assertGreater} from '@std/assert'
-import { default as CurrencySymbolMap } from '@/CurrencyMap.json' with {type: 'json'}
+import { default as CurrencySymbolMap } from '@app/CurrencyMap.json' with {type: 'json'}
 
 let     ccCache: CurrencyAPIResponse
 const   ccCacheFilename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
