@@ -168,15 +168,15 @@ export abstract class ProviderConfig {
     /**
      * Check that the config file is valid. Throw an error if not.
      */
-    abstract validate(): void
+    validate() {
+        // Default validate doesn't actually do anything
+    }
 }
 
 class TestConfig extends ProviderConfig {
     [SAVE_PATH] = 'test.json';
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
-
-    validate() {}
 }
 
 Deno.test({
@@ -226,7 +226,6 @@ Deno.test({
             constructor(public readonly thing: number) {
                 super();
             }
-            validate() {}
         }
 
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments

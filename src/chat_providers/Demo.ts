@@ -70,7 +70,7 @@ class DemoConfig extends ProviderConfig{
     maxWords = 25;
     delay = 1000;
 
-    validate() {
+    override validate() {
         if (this.minWords >= this.maxWords) {
             throw new Error(this.constructor.name + ": minWords must be < maxword")
         }
