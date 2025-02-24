@@ -1,6 +1,6 @@
 import * as embedder from 'jsr:@nfnitloop/deno-embedder';
 import { parseArgs } from '@std/cli/parse-args';
-import { sleep } from '@/util.ts';
+import { sleep } from '@app/util.ts';
 
 const options = {
     importMeta: import.meta,

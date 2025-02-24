@@ -1,16 +1,16 @@
-import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
+import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import {
     DonationClass,
     DonationMessage,
     DonationProvider,
     ProviderConfig,
     SAVE_PATH,
-} from '@/DonationProvider.ts';
+} from '@app/DonationProvider.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
-import { LocallyCachedImage } from '@/ImageCache.ts';
+import { LocallyCachedImage } from '@app/ImageCache.ts';
 import { code } from 'currency-codes';
-import { getCurrencyCodeFromString } from '@/CurrencyConversion.ts';
+import { getCurrencyCodeFromString } from '@app/CurrencyConversion.ts';
 
 export class YouTubeDonationProvider implements DonationProvider {
     name = 'YouTube';

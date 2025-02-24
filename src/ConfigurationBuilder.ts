@@ -1,5 +1,5 @@
 import { crypto } from '@std/crypto/crypto';
-import UISnippets from '@/UISnippets/dir.ts';
+import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
 
 export class ConfigurationBuilder {
