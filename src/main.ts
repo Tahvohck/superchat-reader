@@ -14,7 +14,7 @@ console.log(`1 USD is ${usdToPhp} PHP`);
 let mainWindowHtml = await (await UISnippets.load('index.html')).text()
 const mainWindowCss = await (await UISnippets.load('index.css')).text()
 
-mainWindowHtml = mainWindowHtml.replace(/css-builtin {.*?}/, mainWindowCss)
+mainWindowHtml = mainWindowHtml.replace(/\s*css-builtin {.*?}/, mainWindowCss)
 
 
 const mainWindow = new WebUI()
