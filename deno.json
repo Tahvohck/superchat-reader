@@ -1,6 +1,6 @@
 {
     "imports": {
-        "@/": "./src/",
+        "@app/": "./src/",
         "@biegomar/lorem": "jsr:@biegomar/lorem@^0.1.1",
         "@nfnitloop/deno-embedder": "jsr:@nfnitloop/deno-embedder@^1.6.1",
         "@std/assert": "jsr:@std/assert@^1.0.11",

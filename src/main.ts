@@ -1,7 +1,7 @@
-import { DemoProvider } from '@/chat_providers/Demo.ts';
-import { YouTubeDonationProvider } from '@/chat_providers/YouTube.ts';
-import { ProviderManager } from '@/ProviderManager.ts';
-import { loadCCCache } from '@/CurrencyConversion.ts';
+import { DemoProvider } from '@app/chat_providers/Demo.ts';
+import { YouTubeDonationProvider } from '@app/chat_providers/YouTube.ts';
+import { ProviderManager } from '@app/ProviderManager.ts';
+import { loadCCCache } from '@app/CurrencyConversion.ts';
 
 await loadCCCache();
 

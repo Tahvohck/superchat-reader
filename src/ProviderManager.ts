@@ -1,5 +1,5 @@
-import { DonationMessage, DonationProvider, ProviderConfig } from '@/DonationProvider.ts';
-import { Combine } from '@/util.ts';
+import { DonationMessage, DonationProvider, ProviderConfig } from '@app/DonationProvider.ts';
+import { Combine } from '@app/util.ts';
 
 /**
  * Central point for managing all chat providers.

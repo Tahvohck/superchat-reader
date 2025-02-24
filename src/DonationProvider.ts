@@ -1,6 +1,6 @@
 import { CurrencyCodeRecord } from 'currency-codes';
-import { ConfigurationBuilder } from '@/ConfigurationBuilder.ts';
-import { LocallyCachedImage } from '@/ImageCache.ts';
+import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
+import { LocallyCachedImage } from '@app/ImageCache.ts';
 import { join } from '@std/path/join';
 import { assertEquals } from '@std/assert/equals';
 
