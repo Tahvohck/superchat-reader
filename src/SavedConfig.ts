@@ -5,11 +5,11 @@ const SHOULD_SAVE = Symbol('shouldSave');
 export const SAVE_PATH = Symbol('savePath');
 
 /**
- * Base class for all provider configs.
+ * Base class for all on-disk automatically saving configs.
  *
  * @example
  * ```ts
- * class ExampleConfig extends ProviderConfig {
+ * class ExampleConfig extends SavedConfig {
  *      constructor(public readonly hello: string) {
  *
  *      }
@@ -18,13 +18,13 @@ export const SAVE_PATH = Symbol('savePath');
  *      public another = 123;
  * }
  *
- * const config = await ProviderConfig.load(ExampleConfig, "hi!");
+ * const config = await SavedConfig.load(ExampleConfig, "hi!");
  *
  * // Setting a property automatically causes a synchronous save.
  * config.example = "Goodbye World!";
  * ```
  */
-export abstract class ProviderConfig {
+export abstract class SavedConfig {
     static configPath = join(Deno.cwd(), 'config');
 
     /**
@@ -71,12 +71,12 @@ export abstract class ProviderConfig {
         const savePath = this.getSavePath();
 
         // ensure config folder exists
-        Deno.mkdirSync(ProviderConfig.configPath, { recursive: true });
+        Deno.mkdirSync(SavedConfig.configPath, { recursive: true });
         Deno.writeTextFileSync(savePath, JSON.stringify(this, undefined, 2));
     }
 
     private getSavePath(): string {
-        return join(ProviderConfig.configPath, this[SAVE_PATH]);
+        return join(SavedConfig.configPath, this[SAVE_PATH]);
     }
 
     /**
@@ -87,7 +87,7 @@ export abstract class ProviderConfig {
      * @param constructor Config class to construct
      */
     public static async load<
-        T extends ProviderConfig,
+        T extends SavedConfig,
         // deno-lint-ignore no-explicit-any
         C extends new (...args: any[]) => T,
         P extends ConstructorParameters<C>,
@@ -125,7 +125,7 @@ export abstract class ProviderConfig {
 }
 
 
-class TestConfig extends ProviderConfig {
+class TestConfig extends SavedConfig {
     [SAVE_PATH] = 'test.json';
     public test = 'Hello, world!';
     public unchanged = 'unchanged';
@@ -134,7 +134,7 @@ class TestConfig extends ProviderConfig {
 Deno.test({
     name: 'ProviderConfig: save',
     fn: async () => {
-        const config = await ProviderConfig.load(TestConfig);
+        const config = await SavedConfig.load(TestConfig);
 
         config.test = 'tested';
 
@@ -158,10 +158,10 @@ Deno.test({
             test: 'tested',
         };
 
-        const configPath = join(ProviderConfig.configPath, 'test.json');
+        const configPath = join(SavedConfig.configPath, 'test.json');
         await Deno.writeTextFile(configPath, JSON.stringify(exampleConfig));
 
-        const config = await ProviderConfig.load(TestConfig);
+        const config = await SavedConfig.load(TestConfig);
 
         assertEquals(config.test, exampleConfig.test, 'property with default value not overwritten by config file.');
         assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
@@ -173,7 +173,7 @@ Deno.test({
 Deno.test({
     name: 'ProviderConfig: construct with additional arguments',
     fn: async () => {
-        class TestConfig extends ProviderConfig {
+        class TestConfig extends SavedConfig {
             [SAVE_PATH] = 'test.json';
             constructor(public readonly thing: number) {
                 super();
@@ -181,11 +181,11 @@ Deno.test({
         }
 
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-        await ProviderConfig.load(TestConfig);
+        await SavedConfig.load(TestConfig);
         // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-        await ProviderConfig.load(TestConfig, 'hello, world!');
+        await SavedConfig.load(TestConfig, 'hello, world!');
 
-        const config = await ProviderConfig.load(TestConfig, 1);
+        const config = await SavedConfig.load(TestConfig, 1);
         assertEquals(config.thing, 1, 'argument not passed to constructor.');
     },
 });
