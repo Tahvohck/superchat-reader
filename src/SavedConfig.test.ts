@@ -39,7 +39,7 @@ Deno.test(`${testPrefix} File saving (standalone)`, ()=> {
 
 Deno.test(`${testPrefix} File automatic creation`, async ()=> {
     removeTestFileIfPossible()
-    await TestConfig.load(TestConfig)
+    await TestConfig.getOrCreate(TestConfig)
     // confirm the file exists
     Deno.lstatSync(testFileLocation)
 })
@@ -47,7 +47,7 @@ Deno.test(`${testPrefix} File automatic creation`, async ()=> {
 Deno.test(`${testPrefix} Loading saved value`, async () => {
     let config = new TestConfig()
     config.max = 400
-    config = await TestConfig.load(TestConfig)
+    config = await SavedConfig.getOrCreate(TestConfig)
     assertEquals(config.max, 400)
 })
 
@@ -59,9 +59,8 @@ Deno.test(`${testPrefix} Saved value not overwritten by constructor`, async () =
     assertEquals(config.max, 400)
 })
 
-Deno.test(`${testPrefix} Validation failure during set`, () => {
-    // No need to do a proper load for this, we're only testing the proxy.
-    const config = new TestConfig()
+Deno.test(`${testPrefix} Validation failure during set`, async () => {
+    const config = await SavedConfig.getOrCreate(TestConfig)
     assertThrows(() => {
         config.max = config.min - 1  
     })
@@ -77,8 +76,8 @@ Deno.test(`${testPrefix} Validation failure during load`, async () => {
     badConfig.min = 1
 
     // Now load it as the base class that validates
-    await assertRejects(async () => {
-        await TestConfig.load(TestConfig)
+    await assertRejects(() => {
+        return SavedConfig.getOrCreate(TestConfig)
     })
 })
 

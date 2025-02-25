@@ -82,7 +82,7 @@ export abstract class SavedConfig {
      * @param savePath Path to load config from
      * @param constructor Config class to construct
      */
-    public static async load<
+    public static async getOrCreate<
         T extends SavedConfig,
         // deno-lint-ignore no-explicit-any
         C extends new (...args: any[]) => T,
