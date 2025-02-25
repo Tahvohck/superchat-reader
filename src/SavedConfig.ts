@@ -24,7 +24,7 @@ export abstract class SavedConfig {
     /* Directory on disk where configuration is saved. */
     static configPath = join(Deno.cwd(), 'config');
     /* Internally used to keep track of whether a save/load is currently in progress. */
-    private [SHOULD_SAVE] = true;
+    private [SHOULD_SAVE] = false;
     /* Filename to save config to. Must be defined in cctor, will throw an error if set afterwards. */
     protected abstract [SAVE_PATH]: string;
 
