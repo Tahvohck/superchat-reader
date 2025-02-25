@@ -1,6 +1,6 @@
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
-import { ProviderConfig, SAVE_PATH } from '@app/ProviderConfig.ts'
+import { SavedConfig, SAVE_PATH } from '@app/SavedConfig.ts'
 import { sleep } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
@@ -18,7 +18,7 @@ export class DemoProvider implements DonationProvider {
     config!: DemoConfig;
 
     async activate() {
-        this.config = await ProviderConfig.load(DemoConfig)
+        this.config = await SavedConfig.load(DemoConfig)
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
@@ -65,7 +65,7 @@ export class DemoProvider implements DonationProvider {
     }
 }
 
-class DemoConfig extends ProviderConfig{
+class DemoConfig extends SavedConfig{
     [SAVE_PATH] = "demo.json";
     demoUsername = 'Demo User';
     minWords = 5;
@@ -84,8 +84,8 @@ class DemoConfig extends ProviderConfig{
 
 const testPrefix = "DemoProvider:"
 Deno.test(`${testPrefix} Setup`, () => {
-    ProviderConfig.configPath = join(Deno.cwd(), 'test-output')
-    const savedFile = join(ProviderConfig.configPath, new DemoConfig()[SAVE_PATH])
+    SavedConfig.configPath = join(Deno.cwd(), 'test-output')
+    const savedFile = join(SavedConfig.configPath, new DemoConfig()[SAVE_PATH])
     try {
         Deno.removeSync(savedFile)
     } catch {
@@ -103,7 +103,7 @@ Deno.test(`${testPrefix} configuration file loading`, async ()=> {
 
 Deno.test(`${testPrefix} configuration file saving`, async ()=> {
     const config = await DemoConfig.load(DemoConfig);
-    const savedFile = join(ProviderConfig.configPath, config[SAVE_PATH])
+    const savedFile = join(SavedConfig.configPath, config[SAVE_PATH])
     Deno.removeSync(savedFile)
     config.save()
     // confirm the file exists
@@ -123,5 +123,5 @@ Deno.test(`${testPrefix} Can activate DemoProvider`, async () => {
 })
 
 Deno.test(`${testPrefix} Teardown`, () => {
-    Deno.removeSync(ProviderConfig.configPath, {recursive: true})
+    Deno.removeSync(SavedConfig.configPath, {recursive: true})
 })
