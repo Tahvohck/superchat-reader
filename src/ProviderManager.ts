@@ -7,6 +7,7 @@ import { Combine } from '@app/util.ts';
 export class ProviderManager {
     private readonly providers = new Map<string, DonationProvider>();
     private config!: ProviderManagerConfig;
+    private combine = new Combine<DonationMessage>();
 
     public async init() {
         this.config = await ProviderConfig.load(ProviderManagerConfig);
@@ -24,23 +25,27 @@ export class ProviderManager {
     public async activate(id: string): Promise<boolean> {
         const provider = this.providers.get(id);
         if (!provider) return false;
-        return await provider.activate();
+        const success = await provider.activate();
+        if (success) {
+            this.combine.add(id, provider.process());
+        }
+        return success;
     }
 
     public async activateAll() {
-        for (const provider of this.getActiveProviders()) {
-            const success = await provider.activate();
+        for (const provider of this.getActiveProviderIds()) {
+            const success = await this.activate(provider);
             if (!success) {
-                console.error(`Failed to activate provider ${provider.name} (${provider.id}).`);
+                console.error(`Failed to activate provider ${provider}.`);
             }
         }
     }
 
     public async deactivateAll() {
-        for (const provider of this.getActiveProviders()) {
-            const success = await provider.deactivate();
+        for (const provider of this.getActiveProviderIds()) {
+            const success = await this.deactivate(provider);
             if (!success) {
-                console.error(`Failed to deactivate provider ${provider.name} (${provider.id}).`);
+                console.error(`Failed to deactivate provider ${provider}.`);
             }
         }
     }
@@ -49,28 +54,22 @@ export class ProviderManager {
         const provider = this.providers.get(id);
         if (!provider) return false;
         this.config[id] = false;
+        this.combine.remove(id);
         return await provider.deactivate();
     }
 
-    public getActiveProviders(): DonationProvider[] {
-        return Array.from(this.providers.values()).filter(provider => this.config[provider.id]);
+    public getActiveProviderIds(): string[] {
+        return Object.entries(this.config).filter(([_, isActive]) => isActive).map(([id, _]) => id);
     }
 
-    // TODO: we need to figure out how exactly to handle config menus.
-    // Do we configure providers as they're loaded, store the ConfigurationBuilders, and append the HTML immediately, or do we configure them on-the-fly?
-
+    /**
+     * Read all donation messages from all active providers. If a provider is activated/deactivated while
+     * reading, the stream will be updated automatically.
+     */
     public readAll(): Combine<DonationMessage> {
-        const combine = new Combine<DonationMessage>();
-
-        for (const provider of this.getActiveProviders()) {
-            combine.add(provider.id, provider.process());
-        }
-
-        return combine;
+        return this.combine;
     }
 }
-
-
 
 class ProviderManagerConfig extends ProviderConfig {
     constructor() {
