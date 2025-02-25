@@ -10,30 +10,23 @@ export const SAVE_PATH = Symbol('savePath');
  * @example
  * ```ts
  * class ExampleConfig extends SavedConfig {
- *      constructor(public readonly hello: string) {
- *
- *      }
- *
+ *      [SAVE_PATH] = "filename.json"
  *      public example = "Hello World!";
  *      public another = 123;
  * }
  *
- * const config = await SavedConfig.load(ExampleConfig, "hi!");
+ * const config = await SavedConfig.load(ExampleConfig);
  *
  * // Setting a property automatically causes a synchronous save.
  * config.example = "Goodbye World!";
  * ```
  */
 export abstract class SavedConfig {
+    /* Directory on disk where configuration is saved. */
     static configPath = join(Deno.cwd(), 'config');
-
-    /**
-     * Internally used to keep track of whether a save/load is currently in progress.
-     */
+    /* Internally used to keep track of whether a save/load is currently in progress. */
     private [SHOULD_SAVE] = false;
-    /**
-     * Filename to save config to. Readonly is enforced at Proxy-set level, it must be defined at the class level.
-     */
+    /* Filename to save config to. Must be defined in cctor, will throw an error if set afterwards. */
     protected abstract [SAVE_PATH]: string;
 
     constructor() {
