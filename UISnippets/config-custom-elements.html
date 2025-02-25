@@ -43,4 +43,32 @@
         }
     }
     window.customElements.define("config-slider", ConfigBuilderSlider)
+
+
+    class ConfigBuilderCheckbox extends HTMLElement {
+        connectedCallback() {
+            const uuid = this.getAttribute("uuid")
+            const text = this.getAttribute("label")
+            if (!uuid) {
+                throw new Error("Custom checkbox must have a UUID")
+            }
+            this.style.display = "block"
+
+            console.log(globalThis)
+
+            const label = document.createElement("label")
+            label.setAttribute("for", uuid)
+            label.innerText = text
+            this.appendChild(label)
+
+            const checkbox = document.createElement("input")
+            checkbox.type = "checkbox"
+            checkbox.id = uuid
+            checkbox.oninput = () => {
+                globalThis[`checked_${uuid}`](checkbox.checked)
+            }
+            this.appendChild(checkbox)
+        }
+    }
+    globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
 </script>
