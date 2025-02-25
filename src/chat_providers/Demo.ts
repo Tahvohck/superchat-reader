@@ -5,6 +5,7 @@ import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 
 export class DemoProvider implements DonationProvider {
+    readonly id = 'demo';
     readonly name = 'Demo Provider';
     readonly version = '1.0';
 

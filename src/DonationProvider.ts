@@ -5,6 +5,7 @@ import { join } from '@std/path/join';
 import { assertEquals } from '@std/assert/equals';
 
 export interface DonationProvider {
+    readonly id: string;
     readonly name: string;
     readonly version: string;
     /** Activate the provider. Return value indicates success. */
