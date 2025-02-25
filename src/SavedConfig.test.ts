@@ -48,6 +48,7 @@ Deno.test(`${testPrefix} Loading saved value`, async () => {
     removeTestFileIfPossible()
     let config = new TestConfig()
     config.max = 400
+    config.save()
     config = await SavedConfig.getOrCreate(TestConfig)
     assertEquals(config.max, 400)
 })
@@ -64,9 +65,10 @@ Deno.test(`${testPrefix} Validation failure during load`, async () => {
     class BadConfig extends TestConfig {
         override validate(): void {}
     }
-    const badConfig = await BadConfig.load(BadConfig)
+    const badConfig = new BadConfig()
     badConfig.max = 0
     badConfig.min = 1
+    badConfig.save()
 
     // Now load it as the base class that validates
     await assertRejects(() => {
