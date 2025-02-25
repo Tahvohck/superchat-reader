@@ -1,41 +1,39 @@
 <script defer>
     class ConfigBuilderSlider extends HTMLElement{
-        uuid;
-        valueLabel;
-        textLabel;
-        slider;
-
         connectedCallback() {
-            this.uuid = this.getAttribute("uuid")
-            if (!this.uuid) {
+            const uuid = this.getAttribute("uuid")
+            if (!uuid) {
                 throw new Error("Custom slider must have a UUID")
             }
             const preLabel = document.createElement("label")
+            const slider = document.createElement("input")
+            const valLabel = document.createElement("label")
             this.textLabel = preLabel
             preLabel.setAttribute("for", this.uuid)
+
+            // Text label setup
+            preLabel.setAttribute("for", uuid)
             preLabel.innerText = this.getAttribute("label") ?? "NO LABEL"
-            this.appendChild(preLabel)
             
-            const slider = document.createElement("input")
-            this.slider = slider
+            // Slider setup
             slider.type = "range"
             slider.min = this.getAttribute("min")
             slider.max = this.getAttribute("max")
             slider.step = this.getAttribute("step")
             slider.value = this.getAttribute("value")
-            slider.oninput = this.handleInput.bind(this)
-            this.appendChild(slider)
+            slider.oninput = () => {
+                valLabel.innerText = slider.value
+                globalThis[`slider_${uuid}`](slider.value)
+            }
             
-            const valLabel = document.createElement("label")
-            this.valueLabel = valLabel
-            valLabel.setAttribute("for", this.uuid)
+            // Value label setup
+            valLabel.setAttribute("for", uuid)
             valLabel.innerText = slider.value
-            this.appendChild(valLabel)
-        }
 
-        handleInput() {
-            this.valueLabel.innerText = this.slider.value
-            window[`slider_${this.uuid}`](this.slider.value)
+            // Add child nodes
+            this.appendChild(preLabel)
+            this.appendChild(slider)
+            this.appendChild(valLabel)
         }
     }
     window.customElements.define("config-slider", ConfigBuilderSlider)
@@ -48,21 +46,25 @@
             if (!uuid) {
                 throw new Error("Custom checkbox must have a UUID")
             }
+            const label = document.createElement("label")
+            const checkbox = document.createElement("input")
+
+            // Set this to a block element
             this.style.display = "block"
 
-            console.log(globalThis)
-
-            const label = document.createElement("label")
+            // Set up label
             label.setAttribute("for", uuid)
             label.innerText = text
-            this.appendChild(label)
-
-            const checkbox = document.createElement("input")
+            
+            // Set up checkbox
             checkbox.type = "checkbox"
             checkbox.id = uuid
             checkbox.oninput = () => {
                 globalThis[`checked_${uuid}`](checkbox.checked)
             }
+
+            // Add child nodes
+            this.appendChild(label)
             this.appendChild(checkbox)
         }
     }
