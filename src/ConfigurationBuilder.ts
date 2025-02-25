@@ -224,9 +224,11 @@ if (import.meta.main) {
         console.log(str);
     });
     const win = new WebUI();
+    const builderScript = await (await UISnippets.load('config-custom-elements.html')).text()
     const html = `<html><head><script src="webui.js"></script></head>
             <body>
                 ${cb.build()}
+                ${builderScript}
             </body>
         </html>`;
     cb.bind(win);
@@ -234,4 +236,5 @@ if (import.meta.main) {
     win.show(html).catch(() => {});
 
     await WebUI.wait();
+    console.log("exit program")
 }
