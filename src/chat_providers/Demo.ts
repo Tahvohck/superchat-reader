@@ -15,7 +15,7 @@ export class DemoProvider implements DonationProvider {
     config!: DemoConfig;
 
     async activate() {
-        this.config = await SavedConfig.load(DemoConfig)
+        this.config = await SavedConfig.getOrCreate(DemoConfig)
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,

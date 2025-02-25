@@ -30,7 +30,7 @@ export class YouTubeDonationProvider implements DonationProvider {
 
     async activate(): Promise<boolean> {
         try {
-            this.config = await SavedConfig.load(YouTubeConfig);
+            this.config = await SavedConfig.getOrCreate(YouTubeConfig);
             await this.client.init();
 
             this.shouldStop = false;
