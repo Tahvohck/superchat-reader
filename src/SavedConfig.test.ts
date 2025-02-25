@@ -10,7 +10,7 @@ class TestConfig extends SavedConfig {
 
     override validate(): void {
         if (this.max <= this.min) {
-            throw new Error()
+            throw new Error("TestConfig Validation failed")
         }
     }
 }
