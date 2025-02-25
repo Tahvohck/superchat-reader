@@ -1,0 +1,46 @@
+<script defer>
+    class ConfigBuilderSlider extends HTMLElement{
+        uuid;
+        valueLabel;
+        textLabel;
+        slider;
+
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.uuid = this.getAttribute("uuid")
+            if (!this.uuid) {
+                throw new Error("Custom slider must have a UUID")
+            }
+            const preLabel = document.createElement("label")
+            this.textLabel = preLabel
+            preLabel.setAttribute("for", this.uuid)
+            preLabel.innerText = this.getAttribute("label") ?? "NO LABEL"
+            this.appendChild(preLabel)
+            
+            const slider = document.createElement("input")
+            this.slider = slider
+            slider.type = "range"
+            slider.min = this.getAttribute("min")
+            slider.max = this.getAttribute("max")
+            slider.step = this.getAttribute("step")
+            slider.value = this.getAttribute("value")
+            slider.oninput = this.handleInput.bind(this)
+            this.appendChild(slider)
+            
+            const valLabel = document.createElement("label")
+            this.valueLabel = valLabel
+            valLabel.setAttribute("for", this.uuid)
+            valLabel.innerText = slider.value
+            this.appendChild(valLabel)
+        }
+
+        handleInput() {
+            this.valueLabel.innerText = this.slider.value
+            window[`slider_${this.uuid}`](this.slider.value)
+        }
+    }
+    window.customElements.define("config-builder-slider", ConfigBuilderSlider)
+</script>
