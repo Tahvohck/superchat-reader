@@ -27,10 +27,10 @@ function removeTestFileIfPossible(){
 const defaultConfigPath = SavedConfig.configPath;
 SavedConfig.configPath = join(Deno.cwd(), 'test-output')
 const testFileLocation = join(SavedConfig.configPath, new TestConfig()[SAVE_PATH])
-removeTestFileIfPossible()
 
 const testPrefix = "SavedConfig:"
 Deno.test(`${testPrefix} File saving (standalone)`, ()=> {
+    removeTestFileIfPossible()
     const config = new TestConfig();
     config.save()
     // confirm the file exists
@@ -45,6 +45,7 @@ Deno.test(`${testPrefix} File automatic creation`, async ()=> {
 })
 
 Deno.test(`${testPrefix} Loading saved value`, async () => {
+    removeTestFileIfPossible()
     let config = new TestConfig()
     config.max = 400
     config = await SavedConfig.getOrCreate(TestConfig)
