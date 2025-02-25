@@ -3,9 +3,8 @@ import {
     DonationClass,
     DonationMessage,
     DonationProvider,
-    ProviderConfig,
-    SAVE_PATH,
 } from '@app/DonationProvider.ts';
+import { ProviderConfig, SAVE_PATH } from '@app/ProviderConfig.ts'
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
