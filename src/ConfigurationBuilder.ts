@@ -211,24 +211,21 @@ export class ConfigButton extends ConfigElementBase {
 
 if (import.meta.main) {
     const cb = new ConfigurationBuilder();
-    cb.addButton('click here to boop', () => {
-        console.log('BOOP');
-    });
-    cb.addCheckbox('check', (newVal) => {
-        console.log(newVal);
-    });
-    cb.addSlider('slider', 0, 10, 1, undefined, (newVal) => {
-        console.log(newVal);
-    });
-    cb.addTextBox('Type here!', 'pls', (str) => {
-        console.log(str);
-    });
     const win = new WebUI();
     const builderScript = await (await UISnippets.load('config-custom-elements.html')).text()
-    const html = `<html><head><script src="webui.js"></script></head>
+
+    cb.addButton(   'click here to boop', () => { console.log('BOOP'); })
+    .addCheckbox(   'check', console.log)
+    .addSlider(     'slider', 0, 10, 1, undefined, console.log)
+    .addTextBox(    'Type here!', 'pls', console.log)
+    .addButton(     'Click to exit', () => { win.close() });
+
+    const html = 
+        `<html>
             <body>
                 ${cb.build()}
                 ${builderScript}
+                <script src="webui.js" defer></script>
             </body>
         </html>`;
     cb.bind(win);
