@@ -15,11 +15,7 @@ export class Combine<T> implements AsyncIterable<T> {
         for (const [key, iterator] of this.iterables.entries()) {
             promises.set(key, iterator.next().then(result => [key, result]));
         }
-        while (true) {
-            if (promises.size === 0) {
-                return;
-            }
-
+        while (promises.size > 0) {
             const iterables = new Set(this.iterables.keys());
             for (const iteratorId of promises.keys()) {
                 iterables.delete(iteratorId)
