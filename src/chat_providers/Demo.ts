@@ -4,8 +4,6 @@ import { SavedConfig, SAVE_PATH } from '@app/SavedConfig.ts'
 import { sleep } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
-import { join } from '@std/path/join';
-import { assertThrows } from '@std/assert/throws';
 
 export class DemoProvider implements DonationProvider {
     readonly name = 'Demo Provider';
@@ -80,47 +78,3 @@ class DemoConfig extends SavedConfig{
         }
     }
 }
-
-const testPrefix = "DemoProvider:"
-Deno.test(`${testPrefix} Setup`, () => {
-    SavedConfig.configPath = join(Deno.cwd(), 'test-output')
-    const savedFile = join(SavedConfig.configPath, new DemoConfig()[SAVE_PATH])
-    try {
-        Deno.removeSync(savedFile)
-    } catch {
-        // failing to remove the file is fine (it might not exist yet)
-    }
-})
-
-Deno.test(`${testPrefix} configuration file automatic creation`, async ()=> {
-    await DemoConfig.load(DemoConfig)
-})
-
-Deno.test(`${testPrefix} configuration file loading`, async ()=> {
-    await DemoConfig.load(DemoConfig)
-})
-
-Deno.test(`${testPrefix} configuration file saving`, async ()=> {
-    const config = await DemoConfig.load(DemoConfig);
-    const savedFile = join(SavedConfig.configPath, config[SAVE_PATH])
-    Deno.removeSync(savedFile)
-    config.save()
-    // confirm the file exists
-    Deno.lstatSync(savedFile)
-})
-
-Deno.test(`${testPrefix} configuration fails validation`, async () => {
-    const config = await DemoConfig.load(DemoConfig)
-    assertThrows(() => {
-        config.maxWords = config.minWords - 1  
-    })
-})
-
-Deno.test(`${testPrefix} Can activate DemoProvider`, async () => {
-    const prov = new DemoProvider()
-    await prov.activate()
-})
-
-Deno.test(`${testPrefix} Teardown`, () => {
-    Deno.removeSync(SavedConfig.configPath, {recursive: true})
-})

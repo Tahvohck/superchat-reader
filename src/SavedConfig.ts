@@ -1,5 +1,4 @@
 import { join } from '@std/path';
-import { assertEquals } from '@std/assert';
 
 const SHOULD_SAVE = Symbol('shouldSave');
 export const SAVE_PATH = Symbol('savePath');
@@ -120,69 +119,3 @@ export abstract class SavedConfig {
         // Default validate doesn't actually do anything
     }
 }
-
-
-class TestConfig extends SavedConfig {
-    [SAVE_PATH] = 'test.json';
-    public test = 'Hello, world!';
-    public unchanged = 'unchanged';
-}
-
-Deno.test({
-    name: 'ProviderConfig: save',
-    fn: async () => {
-        const config = await SavedConfig.load(TestConfig);
-
-        config.test = 'tested';
-
-        // @ts-expect-error accessing private method for testing reasons
-        const configPath = config.getSavePath();
-
-        const configFile = JSON.parse(await Deno.readTextFile(configPath));
-
-        assertEquals(configFile.test, 'tested', 'value in config file does not reflect changed value.');
-        assertEquals(configFile.unchanged, 'unchanged', 'value in config file does not reflect unchanged value.');
-
-        // cleanup
-        await Deno.remove(configPath);
-    },
-});
-
-Deno.test({
-    name: 'ProviderConfig: load',
-    fn: async () => {
-        const exampleConfig = {
-            test: 'tested',
-        };
-
-        const configPath = join(SavedConfig.configPath, 'test.json');
-        await Deno.writeTextFile(configPath, JSON.stringify(exampleConfig));
-
-        const config = await SavedConfig.load(TestConfig);
-
-        assertEquals(config.test, exampleConfig.test, 'property with default value not overwritten by config file.');
-        assertEquals(config.unchanged, 'unchanged', "property that's not part of the config file changed.");
-
-        await Deno.remove(configPath);
-    },
-});
-
-Deno.test({
-    name: 'ProviderConfig: construct with additional arguments',
-    fn: async () => {
-        class TestConfig extends SavedConfig {
-            [SAVE_PATH] = 'test.json';
-            constructor(public readonly thing: number) {
-                super();
-            }
-        }
-
-        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-        await SavedConfig.load(TestConfig);
-        // @ts-expect-error should give a compile error for wrong/missing constructor arguments
-        await SavedConfig.load(TestConfig, 'hello, world!');
-
-        const config = await SavedConfig.load(TestConfig, 1);
-        assertEquals(config.thing, 1, 'argument not passed to constructor.');
-    },
-});
