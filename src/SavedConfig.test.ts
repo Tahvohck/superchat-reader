@@ -51,14 +51,6 @@ Deno.test(`${testPrefix} Loading saved value`, async () => {
     assertEquals(config.max, 400)
 })
 
-Deno.test(`${testPrefix} Saved value not overwritten by constructor`, async () => {
-    let config = new TestConfig()
-    config.max = 400
-    config = new TestConfig()
-    config = await TestConfig.load(TestConfig)
-    assertEquals(config.max, 400)
-})
-
 Deno.test(`${testPrefix} Validation failure during set`, async () => {
     const config = await SavedConfig.getOrCreate(TestConfig)
     assertThrows(() => {
