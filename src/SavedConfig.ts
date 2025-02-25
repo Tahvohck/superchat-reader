@@ -41,7 +41,11 @@ export abstract class SavedConfig {
                 try {
                     // Set the value (can't forget to do that)
                     target[prop as keyof typeof target] = value;
-                    target.validate()
+                    if (target[SHOULD_SAVE]) {
+                        // Only validate if saving is enabled. If saving is disabled, we're probably operating
+                        // in internal plumbing and a validation pass will happen afterwards.
+                        target.validate()
+                    }
                 } catch (e) {
                     // Validation failed. Reset to old value, print the error to the console, and return false
                     target[prop as keyof typeof target] = oldvalue
