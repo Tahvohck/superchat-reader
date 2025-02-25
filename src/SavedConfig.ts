@@ -1,5 +1,5 @@
-import { join } from '@std/path/join';
-import { assertEquals } from '@std/assert/equals';
+import { join } from '@std/path';
+import { assertEquals } from '@std/assert';
 
 const SHOULD_SAVE = Symbol('shouldSave');
 export const SAVE_PATH = Symbol('savePath');
