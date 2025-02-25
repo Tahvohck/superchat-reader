@@ -15,15 +15,19 @@ class TestConfig extends SavedConfig {
     }
 }
 
+function removeTestFileIfPossible(){
+    try {
+        Deno.removeSync(testFileLocation)
+    } catch {
+        // This fails if the file isn't there, so it's fine. We want there to not be a file.
+    }
+}
+
 // Test Setup
 const defaultConfigPath = SavedConfig.configPath;
 SavedConfig.configPath = join(Deno.cwd(), 'test-output')
 const testFileLocation = join(SavedConfig.configPath, new TestConfig()[SAVE_PATH])
-try {
-    Deno.removeSync(testFileLocation)
-} catch {
-    // failing to remove the file is fine (it might not exist yet)
-}
+removeTestFileIfPossible()
 
 const testPrefix = "SavedConfig:"
 Deno.test(`${testPrefix} File saving (standalone)`, ()=> {
@@ -34,12 +38,7 @@ Deno.test(`${testPrefix} File saving (standalone)`, ()=> {
 })
 
 Deno.test(`${testPrefix} File automatic creation`, async ()=> {
-    try {
-        Deno.removeSync(testFileLocation)
-    } catch {
-        // This fails if the file isn't there, so it's fine. We want there to not be a file.
-        // This could fail if only this test is run instead of the whole file
-    }
+    removeTestFileIfPossible()
     await TestConfig.load(TestConfig)
     // confirm the file exists
     Deno.lstatSync(testFileLocation)
