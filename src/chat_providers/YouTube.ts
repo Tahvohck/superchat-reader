@@ -1,10 +1,5 @@
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import {
-    DonationClass,
-    DonationMessage,
-    DonationProvider,
-    ProviderConfig,
-} from '@app/DonationProvider.ts';
+import { DonationClass, DonationMessage, DonationProvider, ProviderConfig } from '@app/DonationProvider.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
@@ -115,8 +110,8 @@ export class YouTubeDonationProvider implements DonationProvider {
 
     configure(cb: ConfigurationBuilder): void {
         cb.addTextBox(
-            "Stream ID",
-            "Stream ID",
+            'Stream ID',
+            'Stream ID',
             (newValue) => {
                 this.config.streamId = newValue;
             },

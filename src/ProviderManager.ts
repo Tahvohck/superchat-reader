@@ -16,7 +16,9 @@ export class ProviderManager {
     public register(
         provider: DonationProvider,
     ) {
-        if (this.providers.has(provider.id)) throw new Error(`Provider ${provider.name} (${provider.id}) already registered.`);
+        if (this.providers.has(provider.id)) {
+            throw new Error(`Provider ${provider.name} (${provider.id}) already registered.`);
+        }
         // if we find a new provider, assume we want it enabled by default.
         if (!this.config[provider.id]) this.config[provider.id] = true;
         this.providers.set(provider.id, provider);
@@ -73,7 +75,7 @@ export class ProviderManager {
 
 class ProviderManagerConfig extends ProviderConfig {
     constructor() {
-        super("providers.json")
+        super('providers.json');
     }
 }
 

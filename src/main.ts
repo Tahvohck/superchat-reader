@@ -9,7 +9,7 @@ const manager = new ProviderManager();
 
 await manager.init();
 
-const isProduction = Deno.env.get("NODE_ENV") === "production";
+const isProduction = Deno.env.get('NODE_ENV') === 'production';
 
 if (!isProduction) {
     manager.register(new DemoProvider());
@@ -19,16 +19,15 @@ if (!isProduction) {
 
 await manager.activateAll();
 
-
 const cap = Math.ceil(Math.random() * 50);
 
 console.log(`Printing ${cap} total debug messages.`);
 
-console.log("---------------- DEBUG MESSAGES ----------------");
+console.log('---------------- DEBUG MESSAGES ----------------');
 
 let i = 0;
 for await (const message of manager.readAll()) {
     if (i++ > cap) break;
-    if (message.messageType !== "text") continue;
+    if (message.messageType !== 'text') continue;
     console.log(`${message.author}: ${message.message}`);
 }
