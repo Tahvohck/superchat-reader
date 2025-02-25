@@ -8,8 +8,9 @@
             const preLabel = document.createElement("label")
             const slider = document.createElement("input")
             const valLabel = document.createElement("label")
-            this.textLabel = preLabel
-            preLabel.setAttribute("for", this.uuid)
+
+            // Set this to a block element
+            this.style.display = "block"
 
             // Text label setup
             preLabel.setAttribute("for", uuid)
