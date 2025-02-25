@@ -78,7 +78,7 @@ Deno.test(`${testPrefix} Validation failure during load`, async () => {
     badConfig.min = 1
 
     // Now load it as the base class that validates
-    assertRejects(async () => {
+    await assertRejects(async () => {
         await TestConfig.load(TestConfig)
     })
 })
