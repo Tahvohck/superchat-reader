@@ -29,7 +29,7 @@ SavedConfig.configPath = join(Deno.cwd(), 'test-output')
 const testFileLocation = join(SavedConfig.configPath, new TestConfig()[SAVE_PATH])
 
 const testPrefix = "SavedConfig:"
-Deno.test(`${testPrefix} File saving (standalone)`, ()=> {
+Deno.test(`${testPrefix} File saving (manual)`, ()=> {
     removeTestFileIfPossible()
     const config = new TestConfig();
     config.save()
