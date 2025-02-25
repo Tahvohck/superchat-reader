@@ -1,16 +1,33 @@
+import { assertEquals } from '@std/assert/equals';
+import { assert } from '@std/assert/assert';
+
 export const sleep = (ms: number): Promise<void> => {
     return new Promise((res) => setTimeout(res, ms));
 };
 
+function isAsyncIterable<T>(iterable: unknown): iterable is AsyncIterable<T> {
+    return (iterable as AsyncIterable<T>)[Symbol.asyncIterator] ? true : false
+}
 
 /**
  * Combines multiple async iterables into one, while also allowing you to remove or add iterables during use.
  * 
- * When any iterable is exhausted, it is automatically removed. When there are no more iterables to process. the iterator ends.
+ * There is no guarantee about the order of items for iterables that are dynamically added. They may appear slightly earlier or later in the combined stream
+ * than expected.
+ * 
+ * When any iterable is exhausted, it is automatically removed. When there are no more iterables to process, the iterator ends.
  */
 export class Combine<T> implements AsyncIterable<T> {
+    constructor(iterables?: Iterable<[string, AsyncIterable<T> | AsyncIterator<T>]>) {
+        if (iterables) {
+            for (const [key, iterable] of iterables) {
+                this.add(key, isAsyncIterable<T>(iterable) ? iterable[Symbol.asyncIterator]() : iterable);
+            }
+        }
+    }
+
     async *[Symbol.asyncIterator](): AsyncGenerator<T> {
-        const promises = new Map();
+        const promises = new Map<string, Promise<[string, IteratorResult<T, T | undefined>]>>();
         
         for (const [key, iterator] of this.iterables.entries()) {
             promises.set(key, iterator.next().then(result => [key, result]));
@@ -29,12 +46,19 @@ export class Combine<T> implements AsyncIterable<T> {
 
             const [iteratorId, result] = await Promise.race(promises.values());
             promises.delete(iteratorId);
-
-            if (result.done) {
-                this.remove(iteratorId);
-            } else if (this.iterables.has(iteratorId)){
+            
+            // we only want to yield items for iterators we still care about, and we only want to yield actual items.
+            // the most common case for a value being undefined is a generator function that does not have a return statement,
+            // so we special case that but don't care about other `undefined` values.
+            if ((!result.done && result.value !== undefined) && this.iterables.has(iteratorId)) {
                 yield result.value;
                 promises.set(iteratorId, this.iterables.get(iteratorId)!.next().then(result => [iteratorId, result]));
+            }
+
+            // a `return` in a generator function yields whatever is return with done: true, so we handle
+            // the value *before* removing the iterator.
+            if (result.done) {
+                this.remove(iteratorId);
             }
         }
     }
@@ -52,3 +76,64 @@ export class Combine<T> implements AsyncIterable<T> {
         return iterable;
     }
 }
+
+async function *generate<T>(delay: number, ...items: T[]): AsyncGenerator<T> {
+    while (items.length > 0) {
+        await sleep(delay);
+        yield items.shift()!;
+    }
+}
+
+const collect = async <T>(iterator: AsyncIterable<T>) => {
+    const out = [];
+
+    for await (const item of iterator) {
+        out.push(item);
+    }
+
+    return out;
+}
+
+Deno.test({
+    name: "Combine: preserves item order",
+    async fn() {
+        const combine = new Combine<number>();
+
+        combine.add("generate1", generate(100, 1, 2, 3, 5));
+        combine.add("generate2", generate(350, 4, 6));
+
+        const result = await collect(combine);
+
+        for (let i = 0; i < result.length; i++) {
+            assertEquals(result[i], i+1);
+        }
+    }
+});
+
+Deno.test({
+    name: "Combine: iterators are removed and added while running",
+    async fn() {
+        const combine = new Combine<number>();
+
+        combine.add("generate1", generate(10, 1, 2, 3));
+
+        const items = [];
+
+        for await (const item of combine) {
+            items.push(item);
+
+            if (items.length === 2) {
+                combine.add("generate2", generate(50, 4, 5, 6));
+            }
+
+            // implementation detail: because of how `generate` works, a `done: true` is yielded only after all its elements are exhausted.
+            if (items.length === 4) {
+                //@ts-expect-error accessing internal property for testing
+                const generate1 = combine.iterables.get("generate1");
+                assert(!generate1, "iterable not removed when exhausted");
+            }
+        }
+
+        assertEquals(items.length, 6);
+    }
+});
