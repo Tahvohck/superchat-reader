@@ -90,23 +90,32 @@ export abstract class SavedConfig {
     >(constructor: C, ...args: P): Promise<InstanceType<C>> {
         // Create a new config object to load onto
         const config = new constructor(...args) as InstanceType<C>;
-        const savePath = config.getSavePath();
         // Disable saving while loading the file so we don't overwrite anything.
         config[SHOULD_SAVE] = false;
 
+        let fileContents = "{}";
         try {
-            const json = JSON.parse(await Deno.readTextFile(savePath));
+            fileContents = await Deno.readTextFile(config.getSavePath())
+        } catch {
+            // File doesn't exist, create it. Safe to do, will never overwrite user data unless for some reason
+            // they're running the script directly with write permissions but not read permissions
+            config.save()
+        }
+
+        try {
+            const json = JSON.parse(fileContents)
             for (const [key, value] of Object.entries(json)) {
                 Reflect.set(config as object, key, value);
             }
         } catch (error) {
+            // Failed to parse the saved file. Return the default config with saving off.
             // TODO never fix this typo
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
-            config.save()
+            return config
         }
+        
         config.validate()
-
         // We're done setting up, re-enable saving.
         config[SHOULD_SAVE] = true;
         return config;
