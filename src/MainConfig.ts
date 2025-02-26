@@ -17,7 +17,7 @@ enum LogLevel {
 }
 
 class ProgramConfig extends SavedConfig {
-    [SAVE_PATH] = "mainConfig.jsonc"
+    [SAVE_PATH] = "mainConfig.json"
     debug = false
     logLevel = LogLevel.INFO
 
