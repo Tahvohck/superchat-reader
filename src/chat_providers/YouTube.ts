@@ -8,6 +8,7 @@ import { code } from 'currency-codes';
 import { getCurrencyCodeFromString } from '@app/CurrencyConversion.ts';
 
 export class YouTubeDonationProvider implements DonationProvider {
+    id = 'youtube';
     name = 'YouTube';
     version = '0.0.1';
 

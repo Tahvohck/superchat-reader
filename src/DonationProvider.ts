@@ -3,6 +3,7 @@ import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
 
 export interface DonationProvider {
+    readonly id: string;
     readonly name: string;
     readonly version: string;
     /** Activate the provider. Return value indicates success. */

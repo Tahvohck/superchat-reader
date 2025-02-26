@@ -1,21 +1,33 @@
 import { DemoProvider } from '@app/chat_providers/Demo.ts';
-import { donationMessageToString } from '@app/DonationProvider.ts';
-import { convertCurrency, loadCCCache } from '@app/CurrencyConversion.ts';
-import { code } from 'currency-codes';
+import { YouTubeDonationProvider } from '@app/chat_providers/YouTube.ts';
+import { ProviderManager } from '@app/ProviderManager.ts';
+import { loadCCCache } from '@app/CurrencyConversion.ts';
 
 await loadCCCache();
-const usdToPhp = convertCurrency(1, code('USD'), code('PHP'));
 
-console.log(`1 USD is ${usdToPhp} PHP`);
+const manager = new ProviderManager();
 
-const prov = new DemoProvider();
-await prov.activate();
-setTimeout(() => {
-    prov.deactivate();
-}, 5000);
+await manager.init();
 
-for await (const m of prov.process()) {
-    console.log(`${donationMessageToString(m)}`);
+const isProduction = Deno.env.get('NODE_ENV') === 'production';
+
+if (!isProduction) {
+    manager.register(new DemoProvider());
+} else {
+    manager.register(new YouTubeDonationProvider());
 }
 
-console.log('Program complete');
+await manager.activateAll();
+
+const messageCap = 4;
+
+console.log(`Printing ${messageCap} total debug messages.`);
+
+console.log('---------------- DEBUG MESSAGES ----------------');
+
+let i = 0;
+for await (const message of manager.readAll()) {
+    if (i++ > messageCap) break;
+    if (message.messageType !== 'text') continue;
+    console.log(`${message.author}: ${message.message}`);
+}
