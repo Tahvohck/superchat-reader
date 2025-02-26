@@ -1,5 +1,6 @@
-import { DonationMessage, DonationProvider, ProviderConfig } from '@app/DonationProvider.ts';
+import { DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
 import { Combine } from '@app/util.ts';
+import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 
 /**
  * Central point for managing all chat providers.
@@ -10,7 +11,7 @@ export class ProviderManager {
     private combine = new Combine<DonationMessage>();
 
     public async init() {
-        this.config = await ProviderConfig.load(ProviderManagerConfig);
+        this.config = await SavedConfig.getOrCreate(ProviderManagerConfig);
     }
 
     public register(
@@ -20,7 +21,7 @@ export class ProviderManager {
             throw new Error(`Provider ${provider.name} (${provider.id}) already registered.`);
         }
         // if we find a new provider, assume we want it enabled by default.
-        if (!this.config[provider.id]) this.config[provider.id] = true;
+        if (!this.config.enabled[provider.id]) this.config.enabled[provider.id] = true;
         this.providers.set(provider.id, provider);
     }
 
@@ -55,13 +56,13 @@ export class ProviderManager {
     public async deactivate(id: string): Promise<boolean> {
         const provider = this.providers.get(id);
         if (!provider) return false;
-        this.config[id] = false;
+        this.config.enabled[id] = false;
         this.combine.remove(id);
         return await provider.deactivate();
     }
 
     public getActiveProviderIds(): string[] {
-        return Object.entries(this.config).filter(([_, isActive]) => isActive).map(([id, _]) => id);
+        return Object.entries(this.config.enabled).filter(([_, isActive]) => isActive).map(([id, _]) => id);
     }
 
     /**
@@ -73,14 +74,8 @@ export class ProviderManager {
     }
 }
 
-class ProviderManagerConfig extends ProviderConfig {
-    constructor() {
-        super('providers.json');
-    }
-}
+class ProviderManagerConfig extends SavedConfig {
+    [SAVE_PATH] = "providers.json";
 
-// this is a *kind of* ugly hack to make computed types work with interface merging.
-// we want to use ProviderConfig for automatic saving, but index restrictions on classes are too strict and there's no good way to trap nested objects.
-// so this will have to do.
-type ProviderManagerConfigMapped = { [key: string]: boolean };
-interface ProviderManagerConfig extends ProviderManagerConfigMapped {}
+    public readonly enabled: Record<string, boolean> = {};
+}
