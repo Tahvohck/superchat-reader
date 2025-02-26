@@ -3,7 +3,7 @@ import { join } from '@std/path';
 const SHOULD_SAVE = Symbol('shouldSave');
 export const SAVE_PATH = Symbol('savePath');
 
-const HAS_BEEN_PROXIED = Symbol("hasBeenProxied");
+const HAS_BEEN_PROXIED = Symbol('hasBeenProxied');
 
 /**
  * Base class for all on-disk automatically saving configs.
@@ -36,15 +36,15 @@ export abstract class SavedConfig {
                 return;
             }
             for (const [key, value] of Object.entries(target as object)) {
-                if (typeof value === "object") {
+                if (typeof value === 'object') {
                     // I can't think of a better way to cast this, so this will have to do.
                     // deno-lint-ignore no-explicit-any
                     (target as any)[key] = new Proxy(value, {
-                        set: setCallback
+                        set: setCallback,
                     });
 
                     replacePropertiesWithProxy(value);
-                } 
+                }
             }
 
             // since this property is *only* used for preventing duplicate work and should only ever be defined,
@@ -55,7 +55,7 @@ export abstract class SavedConfig {
                 configurable: false,
                 writable: false,
             });
-        }
+        };
 
         // deno-lint-ignore no-explicit-any
         const setCallback = <T>(target: T, prop: string | symbol, value: any): boolean => {
@@ -66,13 +66,13 @@ export abstract class SavedConfig {
 
             // Enforce CCTOR-only setting of SAVE_PATH
             if (this[SAVE_PATH] && prop == SAVE_PATH) {
-                throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
+                throw new Error('Setting [SAVE_PATH] not allowed outside of cctor');
             }
             // Store the current value.
             const oldvalue = target[prop as keyof typeof target];
             try {
                 // Set the value (can't forget to do that)
-                if (value && typeof value === "object") {
+                if (value && typeof value === 'object') {
                     // The object we're given here was fully instantiated and might itself have object-type properties.
                     // So we look for those and replace them with our setter Proxy.
                     replacePropertiesWithProxy(value);
@@ -81,7 +81,7 @@ export abstract class SavedConfig {
                     target[prop as keyof typeof target] = new Proxy(value, {
                         set: (target, prop, value) => {
                             return setCallback(target, prop, value);
-                        }
+                        },
                     });
                 } else {
                     target[prop as keyof typeof target] = value;
@@ -90,13 +90,13 @@ export abstract class SavedConfig {
                 if (this[SHOULD_SAVE]) {
                     // Only validate if saving is enabled. If saving is disabled, we're probably operating
                     // in internal plumbing and a validation pass will happen afterwards.
-                    this.validate()
+                    this.validate();
                 }
             } catch (e) {
                 // Validation failed. Reset to old value, print the error to the console, and return false
-                target[prop as keyof typeof target] = oldvalue
-                console.error((e as Error).message)
-                return false
+                target[prop as keyof typeof target] = oldvalue;
+                console.error((e as Error).message);
+                return false;
             }
             // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
             if (typeof prop === 'symbol') return true;
@@ -108,7 +108,6 @@ export abstract class SavedConfig {
             set: setCallback,
         });
     }
-
 
     /**
      * Save the config to disk at the path specified by `savePath`.
@@ -144,17 +143,17 @@ export abstract class SavedConfig {
         // Disable saving while loading the file so we don't overwrite anything.
         config[SHOULD_SAVE] = false;
 
-        let fileContents = "{}";
+        let fileContents = '{}';
         try {
-            fileContents = await Deno.readTextFile(config.getSavePath())
+            fileContents = await Deno.readTextFile(config.getSavePath());
         } catch {
             // File doesn't exist, create it. Safe to do, will never overwrite user data unless for some reason
             // they're running the script directly with write permissions but not read permissions
-            config.save()
+            config.save();
         }
 
         try {
-            const json = JSON.parse(fileContents)
+            const json = JSON.parse(fileContents);
             for (const [key, value] of Object.entries(json)) {
                 Reflect.set(config as object, key, value);
             }
@@ -163,10 +162,10 @@ export abstract class SavedConfig {
             // TODO never fix this typo
             // file doesn't exist or old JSON is corruped; we wanna create a new config instead.
             console.warn(`Error loading config for ${constructor.name}: ${error}. Using defaults instead.`);
-            return config
+            return config;
         }
-        
-        config.validate()
+
+        config.validate();
         // We're done setting up, re-enable saving.
         config[SHOULD_SAVE] = true;
         return config;

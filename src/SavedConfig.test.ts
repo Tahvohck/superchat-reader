@@ -4,20 +4,20 @@ import { assertEquals, assertRejects, assertThrows } from '@std/assert';
 
 // Config to use for this test
 class TestConfig extends SavedConfig {
-    [SAVE_PATH] = "TestConfig.json"
-    max = 25
-    min = 5
+    [SAVE_PATH] = 'TestConfig.json';
+    max = 25;
+    min = 5;
 
     override validate(): void {
         if (this.max <= this.min) {
-            throw new Error("TestConfig Validation failed")
+            throw new Error('TestConfig Validation failed');
         }
     }
 }
 
-function removeTestFileIfPossible(){
+function removeTestFileIfPossible() {
     try {
-        Deno.removeSync(testFileLocation)
+        Deno.removeSync(testFileLocation);
     } catch {
         // This fails if the file isn't there, so it's fine. We want there to not be a file.
     }
@@ -25,111 +25,112 @@ function removeTestFileIfPossible(){
 
 // Test Setup
 const defaultConfigPath = SavedConfig.configPath;
-SavedConfig.configPath = join(Deno.cwd(), 'test-output')
-const testFileLocation = join(SavedConfig.configPath, new TestConfig()[SAVE_PATH])
+SavedConfig.configPath = join(Deno.cwd(), 'test-output');
+const testFileLocation = join(SavedConfig.configPath, new TestConfig()[SAVE_PATH]);
 
-const testPrefix = "SavedConfig:"
-Deno.test(`${testPrefix} File saving (manual)`, ()=> {
-    removeTestFileIfPossible()
+const testPrefix = 'SavedConfig:';
+Deno.test(`${testPrefix} File saving (manual)`, () => {
+    removeTestFileIfPossible();
     const config = new TestConfig();
-    config.save()
+    config.save();
     // confirm the file exists
-    Deno.lstatSync(testFileLocation)
-})
+    Deno.lstatSync(testFileLocation);
+});
 
-Deno.test(`${testPrefix} File automatic creation`, async ()=> {
-    removeTestFileIfPossible()
-    await TestConfig.getOrCreate(TestConfig)
+Deno.test(`${testPrefix} File automatic creation`, async () => {
+    removeTestFileIfPossible();
+    await TestConfig.getOrCreate(TestConfig);
     // confirm the file exists
-    Deno.lstatSync(testFileLocation)
-})
+    Deno.lstatSync(testFileLocation);
+});
 
 Deno.test(`${testPrefix} Loading saved value`, async () => {
-    removeTestFileIfPossible()
-    let config = new TestConfig()
-    config.max = 400
-    config.save()
-    config = await SavedConfig.getOrCreate(TestConfig)
-    assertEquals(config.max, 400)
-})
+    removeTestFileIfPossible();
+    let config = new TestConfig();
+    config.max = 400;
+    config.save();
+    config = await SavedConfig.getOrCreate(TestConfig);
+    assertEquals(config.max, 400);
+});
 
 Deno.test(`${testPrefix} Validation failure during set`, async () => {
-    const config = await SavedConfig.getOrCreate(TestConfig)
+    const config = await SavedConfig.getOrCreate(TestConfig);
     assertThrows(() => {
-        config.max = config.min - 1  
-    })
-})
+        config.max = config.min - 1;
+    });
+});
 
 Deno.test(`${testPrefix} Validation failure during load`, async () => {
     // Bypass the validation step during setup
     class BadConfig extends TestConfig {
         override validate(): void {}
     }
-    const badConfig = new BadConfig()
-    badConfig.max = 0
-    badConfig.min = 1
-    badConfig.save()
+    const badConfig = new BadConfig();
+    badConfig.max = 0;
+    badConfig.min = 1;
+    badConfig.save();
 
     // Now load it as the base class that validates
     await assertRejects(() => {
-        return SavedConfig.getOrCreate(TestConfig)
-    })
-})
+        return SavedConfig.getOrCreate(TestConfig);
+    });
+});
 
 interface serviceInterface {
-    John: number
-    Shiki: string
-    Eats: { message: string }
+    John: number;
+    Shiki: string;
+    Eats: { message: string };
 }
 
 class ComplicatedConfig extends SavedConfig {
-    [SAVE_PATH] = "complicated.json"
+    [SAVE_PATH] = 'complicated.json';
     recordholder: Record<string, number> = {
-        "foo": 1,
-        "bar": 2
-    }
+        'foo': 1,
+        'bar': 2,
+    };
     service: serviceInterface = {
         John: 1,
-        Shiki: "oshi",
-        Eats: { message: "Eating burgers" },
-    }
+        Shiki: 'oshi',
+        Eats: { message: 'Eating burgers' },
+    };
     nested: Record<string, Record<string, Record<string, number>>> = {
         one: {
             two: {
-                three: 4
-            }
-        }
-    }
-    array = ["six", "seven", "eight"]
+                three: 4,
+            },
+        },
+    };
+    array = ['six', 'seven', 'eight'];
 }
 
 Deno.test({
     name: `${testPrefix} Complicated Config`,
     fn: async () => {
         let config = await SavedConfig.getOrCreate(ComplicatedConfig);
-        config.nested["one"]["two"]["three"] = 9
-        config.recordholder["baz"] = 3
-        config.array[2] = "ten"
+        config.nested['one']['two']['three'] = 9;
+        config.recordholder['baz'] = 3;
+        config.array[2] = 'ten';
 
         config = await SavedConfig.getOrCreate(ComplicatedConfig);
         assertEquals(
             config.array[2],
-            "ten", "Array change failure"
-        )
+            'ten',
+            'Array change failure',
+        );
         assertEquals(
-            config.recordholder["baz"],
-            3, "Shallow nesting failure"
-        )
+            config.recordholder['baz'],
+            3,
+            'Shallow nesting failure',
+        );
         assertEquals(
-            config.nested["one"]["two"]["three"],
+            config.nested['one']['two']['three'],
             9,
-            "Deep nesting failure"
-        )
-    }
-})
-
+            'Deep nesting failure',
+        );
+    },
+});
 
 Deno.test(`${testPrefix} Teardown`, () => {
-    Deno.removeSync(SavedConfig.configPath, {recursive: true})
-    SavedConfig.configPath = defaultConfigPath
-})
+    Deno.removeSync(SavedConfig.configPath, { recursive: true });
+    SavedConfig.configPath = defaultConfigPath;
+});
