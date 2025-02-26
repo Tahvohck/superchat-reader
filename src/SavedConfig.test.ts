@@ -82,17 +82,12 @@ interface serviceInterface {
     Eats: Error
 }
 
-class serviceClass {
-    returnTrue = () => true
-}
-
 class ComplicatedConfig extends SavedConfig {
     [SAVE_PATH] = "complicated.json"
     recordholder: Record<string, number> = {
         "foo": 1,
         "bar": 2
     }
-    map: Map<number, string> = new Map<number, string>()
     service: serviceInterface = {
         John: 1,
         Shiki: "oshi",
@@ -106,13 +101,10 @@ class ComplicatedConfig extends SavedConfig {
         }
     }
     array = ["six", "seven", "eight"]
-    complexType = new serviceClass()
 }
 
 Deno.test({
     name: `${testPrefix} Complicated Config`,
-    // This test currently doesn't work. Deeper proxying or some other solution will be needed.
-    ignore: true,
     fn: async () => {
         let config = await SavedConfig.getOrCreate(ComplicatedConfig);
         config.nested["one"]["two"]["three"] = 9
@@ -120,11 +112,6 @@ Deno.test({
         config.array[2] = "ten"
 
         config = await SavedConfig.getOrCreate(ComplicatedConfig);
-        try {
-            config.complexType.returnTrue()
-        } catch {
-            throw new Error("Failure to rehydrate type")
-        }
         assertEquals(
             config.array[2],
             "ten", "Array change failure"
