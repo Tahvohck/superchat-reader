@@ -98,14 +98,14 @@ class ComplicatedConfig extends SavedConfig {
         Shiki: "oshi",
         Eats: new Deno.errors.Busy("Eating burgers")
     }
-    nested: Record<string, Record<string, Record<string, number>> | string[]> = {
+    nested: Record<string, Record<string, Record<string, number>>> = {
         one: {
             two: {
                 three: 4
             }
-        },
-        five: ["six", "seven", "eight"]
+        }
     }
+    array = ["six", "seven", "eight"]
     complexType = new serviceClass()
 }
 
@@ -115,21 +115,26 @@ Deno.test({
     ignore: true,
     fn: async () => {
         let config = await SavedConfig.getOrCreate(ComplicatedConfig);
-        (config.nested["one"] as Record<string, Record<string, number>>)["two"]["three"] = 9
+        config.nested["one"]["two"]["three"] = 9
         config.recordholder["baz"] = 3
-        config = await SavedConfig.getOrCreate(ComplicatedConfig);
+        config.array[2] = "ten"
 
+        config = await SavedConfig.getOrCreate(ComplicatedConfig);
         try {
             config.complexType.returnTrue()
         } catch {
             throw new Error("Failure to rehydrate type")
         }
         assertEquals(
+            config.array[2],
+            "ten", "Array change failure"
+        )
+        assertEquals(
             config.recordholder["baz"],
             3, "Shallow nesting failure"
         )
         assertEquals(
-            (config.nested["one"] as Record<string, Record<string, number>>)["two"]["three"],
+            config.nested["one"]["two"]["three"],
             9,
             "Deep nesting failure"
         )
