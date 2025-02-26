@@ -1,10 +1,6 @@
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import {
-    DonationClass,
-    DonationMessage,
-    DonationProvider,
-} from '@app/DonationProvider.ts';
-import { SavedConfig, SAVE_PATH } from '@app/SavedConfig.ts'
+import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
+import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
@@ -117,6 +113,6 @@ export class YouTubeDonationProvider implements DonationProvider {
 }
 
 export class YouTubeConfig extends SavedConfig {
-    [SAVE_PATH] = "youtube.json"
+    [SAVE_PATH] = 'youtube.json';
     public streamId?: string;
 }
