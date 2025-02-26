@@ -75,7 +75,7 @@ export class ProviderManager {
 }
 
 class ProviderManagerConfig extends SavedConfig {
-    [SAVE_PATH] = "providers.json";
+    [SAVE_PATH] = 'providers.json';
 
     public readonly enabled: Record<string, boolean> = {};
 }
