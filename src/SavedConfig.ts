@@ -29,33 +29,46 @@ export abstract class SavedConfig {
     protected abstract [SAVE_PATH]: string;
 
     constructor() {
-        return new Proxy(this, {
-            set: (target, prop, value) => {
-                // Enforce CCTOR-only setting of SAVE_PATH
-                if (target[SAVE_PATH] && prop == SAVE_PATH) {
-                    throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
-                }
-                // Store the current value.
-                const oldvalue = target[prop as keyof typeof target]
-                try {
-                    // Set the value (can't forget to do that)
+        // deno-lint-ignore no-explicit-any
+        const setCallback = <T>(target: T, prop: string | symbol, value: any): boolean => {
+            // Enforce CCTOR-only setting of SAVE_PATH
+            if (this[SAVE_PATH] && prop == SAVE_PATH) {
+                throw new Error("Setting [SAVE_PATH] not allowed outside of cctor")
+            }
+            // Store the current value.
+            const oldvalue = target[prop as keyof typeof target];
+            try {
+                // Set the value (can't forget to do that)
+                if (typeof value === "object") {
+                    console.log("Object value found: ", target, prop, value)
+                    // if the value is an object, we want to trap any sets to it similar to how we trap
+                    // sets on the root object.
+                    target[prop as keyof typeof target] = new Proxy(value, {
+                        set: setCallback
+                    });
+                } else {
                     target[prop as keyof typeof target] = value;
-                    if (target[SHOULD_SAVE]) {
-                        // Only validate if saving is enabled. If saving is disabled, we're probably operating
-                        // in internal plumbing and a validation pass will happen afterwards.
-                        target.validate()
-                    }
-                } catch (e) {
-                    // Validation failed. Reset to old value, print the error to the console, and return false
-                    target[prop as keyof typeof target] = oldvalue
-                    console.error((e as Error).message)
-                    return false
                 }
-                // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
-                if (typeof prop === 'symbol') return true;
-                if (target[SHOULD_SAVE]) target.save();
-                return true;
-            },
+
+                if (this[SHOULD_SAVE]) {
+                    // Only validate if saving is enabled. If saving is disabled, we're probably operating
+                    // in internal plumbing and a validation pass will happen afterwards.
+                    this.validate()
+                }
+            } catch (e) {
+                // Validation failed. Reset to old value, print the error to the console, and return false
+                target[prop as keyof typeof target] = oldvalue
+                console.error((e as Error).message)
+                return false
+            }
+            // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
+            if (typeof prop === 'symbol') return true;
+            if (this[SHOULD_SAVE]) this.save();
+            return true;
+        };
+
+        return new Proxy(this, {
+            set: setCallback
         });
     }
 
