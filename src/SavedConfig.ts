@@ -67,6 +67,13 @@ export abstract class SavedConfig {
             if (this[SAVE_PATH] && prop == SAVE_PATH) {
                 throw new Error('Setting [SAVE_PATH] not allowed outside of cctor');
             }
+            // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well.
+            // Set it, but then skip out on saving and validation.
+            if (typeof prop === 'symbol') {
+                target[prop as keyof typeof target] = value;
+                return true;
+            }
+
             // Store the current value.
             const oldvalue = target[prop as keyof typeof target];
             try {
@@ -97,9 +104,6 @@ export abstract class SavedConfig {
                 console.error((e as Error).message);
                 return false;
             }
-            // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well.
-            // So we ignore them as save candidates.
-            if (typeof prop === 'symbol') return true;
             if (this[SHOULD_SAVE]) this.save();
             return true;
         };
