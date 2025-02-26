@@ -7,7 +7,11 @@ await loadCCCache();
 
 const manager = new ProviderManager();
 
-await manager.init();
+const prov = new DemoProvider();
+await prov.activate();
+setTimeout(() => {
+    prov.deactivate();
+}, 5000);
 
 const isProduction = Deno.env.get('NODE_ENV') === 'production';
 
