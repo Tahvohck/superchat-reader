@@ -109,13 +109,6 @@ export class YouTubeDonationProvider implements DonationProvider {
     }
 
     configure(cb: ConfigurationBuilder): void {
-        cb.addTextBox(
-            'Stream ID',
-            'Stream ID',
-            (newValue) => {
-                this.config.streamId = newValue;
-            },
-        );
     }
 }
 
