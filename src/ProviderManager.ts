@@ -3,6 +3,15 @@ import { Combine } from '@app/util.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 
 /**
+ * Indicates that a requested provider was not registered.
+ */
+export class ProviderNotFound extends Error {
+    constructor(id: string) {
+        super(`Provider with ID ${id} not found.`);
+    }
+}
+
+/**
  * Central point for managing all chat providers.
  */
 export class ProviderManager {
@@ -25,9 +34,18 @@ export class ProviderManager {
         this.providers.set(provider.id, provider);
     }
 
+    /**
+     * Activate the provider with the given ID.
+     * @param id provider to activate
+     * @returns true if activation was successful, false otherwise
+     * @throws {ProviderNotFound} If the provider with the given ID does not exist.
+     */
     public async activate(id: string): Promise<boolean> {
         const provider = this.providers.get(id);
-        if (!provider) return false;
+        if (!provider) {
+            throw new ProviderNotFound(id);
+        }
+
         const success = await provider.activate();
         if (success) {
             this.combine.add(id, provider.process());
@@ -35,30 +53,60 @@ export class ProviderManager {
         return success;
     }
 
+    /**
+     * Activate all providers that should be active according to the config.
+     */
     public async activateAll() {
         for (const provider of this.getActiveProviderIds()) {
-            const success = await this.activate(provider);
-            if (!success) {
-                console.error(`Failed to activate provider ${provider}.`);
+            try {
+                const success = await this.activate(provider);
+                if (!success) {
+                    console.error(`Failed to activate provider ${provider}.`);
+                }
+            } catch (error) {
+                if (!(error instanceof ProviderNotFound)) {
+                    throw error;
+                }
+
+                console.warn(`Provider with ID ${provider} not found. Skipping.`);
             }
         }
     }
 
-    public async deactivateAll() {
-        for (const provider of this.getActiveProviderIds()) {
-            const success = await this.deactivate(provider);
-            if (!success) {
-                console.error(`Failed to deactivate provider ${provider}.`);
-            }
-        }
-    }
-
+    /**
+     * Deactivate the provider with the given ID.
+     * @param id provider to deactivate
+     * @returns true if deactivation was successful, false otherwise
+     * @throws {ProviderNotFound} If the provider with the given ID does not exist.
+     */
     public async deactivate(id: string): Promise<boolean> {
         const provider = this.providers.get(id);
-        if (!provider) return false;
+        if (!provider) {
+            throw new ProviderNotFound(id);
+        }
         this.config.enabled[id] = false;
         this.combine.remove(id);
         return await provider.deactivate();
+    }
+
+    /**
+     * Deactivate all currently active providers.
+     */
+    public async deactivateAll() {
+        for (const provider of this.getActiveProviderIds()) {
+            try {
+                const success = await this.deactivate(provider);
+                if (!success) {
+                    console.error(`Failed to deactivate provider ${provider}.`);
+                }
+            } catch (error) {
+                if (!(error instanceof ProviderNotFound)) {
+                    throw error;
+                }
+
+                console.warn(`Provider with ID ${provider} not found. Skipping.`);
+            }
+        }
     }
 
     public getActiveProviderIds(): string[] {
