@@ -7,7 +7,6 @@ export const sleep = (ms: number): Promise<void> => {
 
 /**
  * Combines multiple async iterables into one, while also allowing you to remove or add iterables during use.
- *
  * When any iterable is exhausted, it is automatically removed. When there are no more iterables to process. the iterator ends.
  */
 export class Combine<T> implements AsyncIterable<T> {
