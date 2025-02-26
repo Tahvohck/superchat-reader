@@ -32,7 +32,7 @@ export abstract class SavedConfig {
 
     constructor() {
         const replacePropertiesWithProxy = <T>(target: T) => {
-            if ((target as { [HAS_BEEN_PROXIED]?: boolean })[HAS_BEEN_PROXIED]) {
+            if (!target || (target as { [HAS_BEEN_PROXIED]?: boolean })[HAS_BEEN_PROXIED]) {
                 return;
             }
             for (const [key, value] of Object.entries(target as object)) {
@@ -76,7 +76,7 @@ export abstract class SavedConfig {
             const oldvalue = target[prop as keyof typeof target];
             try {
                 // Set the value (can't forget to do that)
-                if (typeof value === "object") {
+                if (value && typeof value === "object") {
                     // The object we're given here was fully instantiated and might itself have object-type properties.
                     // So we look for those and replace them with our setter Proxy.
                     replacePropertiesWithProxy(value);
@@ -102,7 +102,7 @@ export abstract class SavedConfig {
                 console.error((e as Error).message)
                 return false
             }
-            
+
             if (this[SHOULD_SAVE]) this.save();
             return true;
         };
