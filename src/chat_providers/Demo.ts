@@ -1,5 +1,6 @@
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
+import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { sleep } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
@@ -10,11 +11,11 @@ export class DemoProvider implements DonationProvider {
 
     messages: DonationMessage[] = [];
     active = false;
-    delay = 1000;
 
-    config = new DemoConfig();
+    config!: DemoConfig;
 
-    activate() {
+    async activate() {
+        this.config = await SavedConfig.getOrCreate(DemoConfig);
         console.log(
             `Username: ${this.config.demoUsername}\n` +
                 `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
@@ -32,7 +33,7 @@ export class DemoProvider implements DonationProvider {
 
     async *process() {
         while (this.active) {
-            await sleep(this.delay);
+            await sleep(this.config.delay);
             if (!this.active) {
                 return;
             }
@@ -61,8 +62,19 @@ export class DemoProvider implements DonationProvider {
     }
 }
 
-class DemoConfig {
+class DemoConfig extends SavedConfig {
+    [SAVE_PATH] = 'demo.json';
     demoUsername = 'Demo User';
     minWords = 5;
     maxWords = 25;
+    delay = 1000;
+
+    override validate() {
+        if (this.minWords >= this.maxWords) {
+            throw new Error(this.constructor.name + ': minWords must be < maxword');
+        }
+        if (this.delay < 100) {
+            throw new Error(this.constructor.name + ': Delay < 100ms is too fast. Refusing.');
+        }
+    }
 }
