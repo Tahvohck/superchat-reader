@@ -2,7 +2,6 @@ import { join } from '@std/path';
 
 const SHOULD_SAVE = Symbol('shouldSave');
 export const SAVE_PATH = Symbol('savePath');
-
 const HAS_BEEN_PROXIED = Symbol('hasBeenProxied');
 
 /**
@@ -98,7 +97,8 @@ export abstract class SavedConfig {
                 console.error((e as Error).message);
                 return false;
             }
-            // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well. So we ignore them as save candidates.
+            // Symbol keys can't be persisted to disk, and they're used for internal state tracking as well.
+            // So we ignore them as save candidates.
             if (typeof prop === 'symbol') return true;
             if (this[SHOULD_SAVE]) this.save();
             return true;
