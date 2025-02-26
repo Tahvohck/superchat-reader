@@ -76,6 +76,66 @@ Deno.test(`${testPrefix} Validation failure during load`, async () => {
     })
 })
 
+interface serviceInterface {
+    John: number
+    Shiki: string
+    Eats: Error
+}
+
+class serviceClass {
+    returnTrue = () => true
+}
+
+class ComplicatedConfig extends SavedConfig {
+    [SAVE_PATH] = "complicated.json"
+    recordholder: Record<string, number> = {
+        "foo": 1,
+        "bar": 2
+    }
+    map: Map<number, string> = new Map<number, string>()
+    service: serviceInterface = {
+        John: 1,
+        Shiki: "oshi",
+        Eats: new Deno.errors.Busy("Eating burgers")
+    }
+    nested: Record<string, Record<string, Record<string, number>> | string[]> = {
+        one: {
+            two: {
+                three: 4
+            }
+        },
+        five: ["six", "seven", "eight"]
+    }
+    complexType = new serviceClass()
+}
+
+Deno.test({
+    name: `${testPrefix} Complicated Config`,
+    // This test currently doesn't work. Deeper proxying or some other solution will be needed.
+    ignore: true,
+    fn: async () => {
+        let config = await SavedConfig.getOrCreate(ComplicatedConfig);
+        (config.nested["one"] as Record<string, Record<string, number>>)["two"]["three"] = 9
+        config.recordholder["baz"] = 3
+        config = await SavedConfig.getOrCreate(ComplicatedConfig);
+
+        try {
+            config.complexType.returnTrue()
+        } catch {
+            throw new Error("Failure to rehydrate type")
+        }
+        assertEquals(
+            config.recordholder["baz"],
+            3, "Shallow nesting failure"
+        )
+        assertEquals(
+            (config.nested["one"] as Record<string, Record<string, number>>)["two"]["three"],
+            9,
+            "Deep nesting failure"
+        )
+    }
+})
+
 
 Deno.test(`${testPrefix} Teardown`, () => {
     Deno.removeSync(SavedConfig.configPath, {recursive: true})
