@@ -19,15 +19,15 @@ if (!isProduction) {
 
 await manager.activateAll();
 
-const cap = Math.ceil(Math.random() * 50);
+const messageCap = 4;
 
-console.log(`Printing ${cap} total debug messages.`);
+console.log(`Printing ${messageCap} total debug messages.`);
 
 console.log('---------------- DEBUG MESSAGES ----------------');
 
 let i = 0;
 for await (const message of manager.readAll()) {
-    if (i++ > cap) break;
+    if (i++ > messageCap) break;
     if (message.messageType !== 'text') continue;
     console.log(`${message.author}: ${message.message}`);
 }
