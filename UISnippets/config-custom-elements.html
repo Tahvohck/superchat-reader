@@ -235,6 +235,17 @@
     }
 
 
+    class ConfigBuilderTextbox extends HTMLElement {
+        connectedCallback() {
+            const uuid = this.getAttribute("uuid")
+            const text = this.getAttribute("label")
+            if (!uuid) {
+                throw new Error("Custom textbox must have a UUID")
+            }
+            const shadow = this.attachShadow({mode: "closed"})
+        }
+    }
+
     // This loop waits till the webUI bridge is connected before setting up the custom tags. This lets information
     // be passed back and forth between the program and interface.
     // First waits 250ms, then checks in loops of 10ms (timing took somewhere just below 300ms in testing)
