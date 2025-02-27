@@ -5,8 +5,10 @@ import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 
 let mainWindowHtml = await (await UISnippets.load('index.html')).text()
 const mainWindowCss = await (await UISnippets.load('index.css')).text()
+const builderScript = await (await UISnippets.load('config-custom-elements.html')).text()
 
 mainWindowHtml = mainWindowHtml.replace(/\s*css-builtin {.*?}/, mainWindowCss)
+mainWindowHtml = mainWindowHtml.replace(/<script-config-builder \/>/, builderScript)
 
 const mainWindow = new WebUI()
 const cb = new ConfigurationBuilder();
