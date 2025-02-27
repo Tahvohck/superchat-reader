@@ -87,11 +87,6 @@ const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text(
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text();
 const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text();
 const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
-const elementRegistry: Record<string, object> = {}
-
-export function getRegisteredElement(id: string) {
-    return JSON.stringify(elementRegistry[id])
-}
 
 /** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
@@ -169,7 +164,6 @@ export class ConfigSlider extends ConfigElementBase {
             defaultVal = min;
         }
         super(label, { min, max, step, defaultVal });
-        elementRegistry[this.callbackIdentifier] = {min, max, step, defaultVal}
     }
 
     bind(wui: WebUI): void {

@@ -1,6 +1,6 @@
 <script defer>
     class ConfigBuilderSlider extends HTMLElement{
-        async connectedCallback() {
+        connectedCallback() {
             const uuid = this.getAttribute("uuid")
             if (!uuid) {
                 throw new Error("Custom slider must have a UUID")
@@ -9,8 +9,6 @@
             const slider = document.createElement("input")
             const valLabel = document.createElement("label")
             const shadow = this.attachShadow({mode:"closed"})
-            const resp = await getRegisteredElement(uuid)
-            const {min, max, step, defaultVal} = JSON.parse(resp)
 
             // Set this to a block element
             this.style.display = "block"
@@ -21,10 +19,10 @@
             
             // Slider setup
             slider.type = "range"
-            slider.min = min
-            slider.max = max
-            slider.step = step
-            slider.value = defaultVal
+            slider.min = this.getAttribute("min")
+            slider.max = this.getAttribute("max")
+            slider.step = this.getAttribute("step")
+            slider.value = this.getAttribute("value")
             slider.oninput = () => {
                 valLabel.innerText = slider.value
                 globalThis[`slider_${uuid}`](slider.value)
