@@ -38,8 +38,6 @@
             shadow.appendChild(valLabel)
         }
     }
-    window.customElements.define("config-slider", ConfigBuilderSlider)
-
 
     class ConfigBuilderCheckbox extends HTMLElement {
         connectedCallback() {
@@ -71,5 +69,20 @@
             shadow.appendChild(checkbox)
         }
     }
-    globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
+
+    // This loop waits till the webUI bridge is connected before setting up the custom tags. This lets information
+    // be passed back and forth between the program and interface.
+    // First waits 250ms, then checks in loops of 10ms (timing took somewhere just below 300ms in testing)
+    function waitForWebUI() {
+        try {
+            if (!webui?.isConnected()) {
+                throw new Error()
+            }
+            globalThis.customElements.define("config-slider", ConfigBuilderSlider)
+            globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
+        } catch {
+            setTimeout(waitForWebUI, 10)
+        }
+    }
+    setTimeout(waitForWebUI, 250)
 </script>
