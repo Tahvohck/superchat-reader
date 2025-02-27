@@ -1,0 +1,73 @@
+<script defer>
+    class ConfigBuilderSlider extends HTMLElement{
+        connectedCallback() {
+            const uuid = this.getAttribute("uuid")
+            if (!uuid) {
+                throw new Error("Custom slider must have a UUID")
+            }
+            const preLabel = document.createElement("label")
+            const slider = document.createElement("input")
+            const valLabel = document.createElement("label")
+
+            // Set this to a block element
+            this.style.display = "block"
+
+            // Text label setup
+            preLabel.setAttribute("for", uuid)
+            preLabel.innerText = this.getAttribute("label") ?? "NO LABEL"
+            
+            // Slider setup
+            slider.type = "range"
+            slider.min = this.getAttribute("min")
+            slider.max = this.getAttribute("max")
+            slider.step = this.getAttribute("step")
+            slider.value = this.getAttribute("value")
+            slider.oninput = () => {
+                valLabel.innerText = slider.value
+                globalThis[`slider_${uuid}`](slider.value)
+            }
+            
+            // Value label setup
+            valLabel.setAttribute("for", uuid)
+            valLabel.innerText = slider.value
+
+            // Add child nodes
+            this.appendChild(preLabel)
+            this.appendChild(slider)
+            this.appendChild(valLabel)
+        }
+    }
+    window.customElements.define("config-slider", ConfigBuilderSlider)
+
+
+    class ConfigBuilderCheckbox extends HTMLElement {
+        connectedCallback() {
+            const uuid = this.getAttribute("uuid")
+            const text = this.getAttribute("label")
+            if (!uuid) {
+                throw new Error("Custom checkbox must have a UUID")
+            }
+            const label = document.createElement("label")
+            const checkbox = document.createElement("input")
+
+            // Set this to a block element
+            this.style.display = "block"
+
+            // Set up label
+            label.setAttribute("for", uuid)
+            label.innerText = text
+            
+            // Set up checkbox
+            checkbox.type = "checkbox"
+            checkbox.id = uuid
+            checkbox.oninput = () => {
+                globalThis[`checked_${uuid}`](checkbox.checked)
+            }
+
+            // Add child nodes
+            this.appendChild(label)
+            this.appendChild(checkbox)
+        }
+    }
+    globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
+</script>
