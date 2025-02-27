@@ -8,6 +8,7 @@
             const preLabel = document.createElement("label")
             const slider = document.createElement("input")
             const valLabel = document.createElement("label")
+            const shadow = this.attachShadow({mode:"closed"})
 
             // Set this to a block element
             this.style.display = "block"
@@ -32,9 +33,9 @@
             valLabel.innerText = slider.value
 
             // Add child nodes
-            this.appendChild(preLabel)
-            this.appendChild(slider)
-            this.appendChild(valLabel)
+            shadow.appendChild(preLabel)
+            shadow.appendChild(slider)
+            shadow.appendChild(valLabel)
         }
     }
     window.customElements.define("config-slider", ConfigBuilderSlider)
@@ -49,6 +50,7 @@
             }
             const label = document.createElement("label")
             const checkbox = document.createElement("input")
+            const shadow = this.attachShadow({mode: "closed"})
 
             // Set this to a block element
             this.style.display = "block"
@@ -65,8 +67,8 @@
             }
 
             // Add child nodes
-            this.appendChild(label)
-            this.appendChild(checkbox)
+            shadow.appendChild(label)
+            shadow.appendChild(checkbox)
         }
     }
     globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
