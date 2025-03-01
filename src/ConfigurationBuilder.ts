@@ -1,7 +1,6 @@
 import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
-import { string } from 'jsr:@cliffy/flags@1.0.0-rc.4';
 
 export class ConfigurationBuilder {
     private elements: ConfigElementBase[] = [];
