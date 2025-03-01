@@ -112,9 +112,26 @@
 
             shadow.appendChild(input);
 
-            this.addEventListener("input", () => {
+            let timeout;
+            const submit = () => {
                 const value = shadow.querySelector("input").value;
                 webui.call(`textbox_${uuid}`, value);
+            };
+
+            // we don't want to spam the backend with potential save-triggers
+            // so we wait for after the user has stopped typing for a while to actually send the current value.
+            this.addEventListener("input", ev => {
+                clearTimeout(timeout);
+                timeout = setTimeout(submit, 250);
+            });
+
+            // if the user instead hits enter (to signal they're done), we manually submit immediately and
+            // clear our timeout.
+            this.addEventListener("keydown", ev => {
+                if (ev.key === "Enter") {
+                    clearTimeout(timeout);
+                    submit();
+                }
             });
 
             shadow.innerHTML += `
