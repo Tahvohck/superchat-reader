@@ -1,6 +1,7 @@
 import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
+import { string } from 'jsr:@cliffy/flags@1.0.0-rc.4';
 
 export class ConfigurationBuilder {
     private elements: ConfigElementBase[] = [];
@@ -54,10 +55,16 @@ export class ConfigurationBuilder {
      * Build the configuration panel for display
      * @returns An HTML string for rendering
      */
-    build(): string {
+    render(): string {
         let content = '<div>';
         for (const elem of this.elements) {
-            content += elem.render();
+            const {tagName, attr} = elem.build();
+            let tagStr = `<${tagName} `
+            for (const [name, value] of Object.entries(attr)) {
+                tagStr += `${name}="${value}" `
+            }
+            tagStr += `></${tagName}>`
+            content += tagStr
         }
         content += '</div>';
 
@@ -119,15 +126,8 @@ abstract class ConfigElementBase {
         this.callbackIdentifier = crypto.randomUUID().replaceAll('-', '_');
     }
 
-    /** Render the element to HTML */
-    render(): string {
-        return ""
-        //return this.snippet.replaceAll(this.replacementRegex, (str) => {
-        //    str = str.replaceAll(/[{}]/g, '');
-        //    return String(this.replacementKeys[str]!);
-        //});
-    }
-
+    /** Render the element to tag metadata */
+    abstract build(): {tagName: string, attr: Record<string, string | number | boolean>}
     abstract bind(wui: WebUI): void;
 }
 
@@ -140,6 +140,16 @@ export class ConfigCheckbox extends ConfigElementBase implements CheckboxOptions
     constructor(label: string, options: CheckboxOptions) {
         super(label);
         Object.assign(this, options)
+    }
+
+    build () {
+        return {
+            tagName: "config-checkbox", 
+            attr: {
+                label: this.label,
+                uuid: this.callbackIdentifier
+            }
+        }
     }
 
     bind(wui: WebUI): void {
@@ -166,6 +176,20 @@ export class ConfigSlider extends ConfigElementBase implements SliderOptions {
         Object.assign(this, options)
         if (this.range[0] >= this.range[1]) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${this.range[0]} !< ${this.range[1]}]`);
+        }
+    }
+
+    build() {
+        return {
+            tagName: "config-slider",
+            attr: {
+                label: this.label,
+                uuid: this.callbackIdentifier,
+                min: this.range[0],
+                max: this.range[1],
+                step: this.step,
+                startValue: this.startValue
+            }
         }
     }
 
@@ -199,6 +223,18 @@ export class ConfigTextBox extends ConfigElementBase implements TextboxOptions {
         Object.assign(this, options)
     }
 
+    build () {
+        return {
+            tagName: "config-textbox",
+            attr: {
+                label: this.label,
+                uuid: this.callbackIdentifier,
+                value: this.startValue ?? "",
+                placeholder: this.placeholder ?? ""
+            }
+        }
+    }
+
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
             this.callback(arg.string(0));
@@ -214,6 +250,15 @@ export class ConfigButton extends ConfigElementBase implements ButtonOptions {
     constructor(label: string, options: ButtonOptions) {
         super(label);
         Object.assign(this, options)
+    }
+
+    build () {
+        return {
+            tagName: "button",
+            attr: {
+                id: this.callbackIdentifier
+            }
+        }
     }
 
     bind(wui: WebUI): void {
@@ -234,12 +279,16 @@ if (import.meta.main) {
         step: 2
     })
     .addTextBox(    'Type here!', {})
-    .addButton(     'Click to exit', {});
+    .addButton(     'Click to exit', {
+        callback: () => {
+            win.close()
+        }
+    });
 
     const html = 
         `<html>
             <body>
-                ${cb.build()}
+                ${cb.render()}
                 ${builderScript}
                 <script src="webui.js" defer></script>
             </body>

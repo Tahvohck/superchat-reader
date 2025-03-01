@@ -26,7 +26,7 @@ const cb = new ConfigurationBuilder()
     .addSlider('slider', {})
     .addTextBox('Type here!', {});
 
-mainWindowHtml = mainWindowHtml.replace("<config />", cb.build())
+mainWindowHtml = mainWindowHtml.replace("<config />", cb.render())
 cb.bind(mainWindow)
 
 manager.register(new DemoProvider());
