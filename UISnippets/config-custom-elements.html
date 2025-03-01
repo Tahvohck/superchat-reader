@@ -1,4 +1,17 @@
 <script defer>
+    /**
+     * @param { HTMLElement } element
+     * @param { string[] } attributes
+     * @returns { Record<string, string | null> }
+     */
+    function getMultipleAttributes(element, ...attributes) {
+        const out = {};
+        for (const attribute of attributes) {
+            out[attribute] = element.getAttribute(attribute)
+        }
+        return out;
+    }
+
     class ConfigBuilderSlider extends HTMLElement{
         connectedCallback() {
             const uuid = this.getAttribute("uuid")
@@ -70,6 +83,158 @@
         }
     }
 
+    const DONATION_THRESHOLDS = [
+        [0, "#1565C0", "#FFFFFF"],
+        [2, "#00E5FF", "#000000"],
+        [5, "#0F9D58", "#000000"],
+        [10, "#FFCA28", "#000000"],
+        [20, "#F57C00", "#FFFFFF"],
+        [50, "#E91E63", "#FFFFFF"],
+        [100, "#E62117", "#FFFFFF"]
+    ];
+
+    function getDonationColors(amount) {
+        let ret;
+        for (const [min, ...newRet] of DONATION_THRESHOLDS) {
+            if (amount >= min) {
+                ret = newRet;
+            } else {
+                return ret;
+            }
+        }
+
+        return color;
+    }
+
+    function createDonationHeader(authorName, avatarUri, currency, amount) {
+        const header = document.createElement("div");
+
+        const avatar = document.createElement("img");
+        avatar.src = avatarUri;
+        avatar.style = "max-height: 1rem";
+
+        const author = document.createElement("p");
+        author.textContent = authorName;
+
+        const authorContainer = document.createElement("div");
+        authorContainer.appendChild(avatar);
+        authorContainer.appendChild(author);
+        header.appendChild(authorContainer);
+
+        const donationContainer = document.createElement("div");
+        donationContainer.textContent = `${currency}${amount.toFixed(2)}`;
+        header.appendChild(donationContainer);
+
+        return header;
+    }
+
+    class DonationTextMessage extends HTMLElement {
+        connectedCallback() {
+            this.attachShadow({ mode: "open" });
+            
+            const shadow = this.shadowRoot;
+
+            const {
+                author: authorName,
+                avatarUri,
+                currency,
+                amount: amountString
+            } = getMultipleAttributes(this, "author", "avatarUri", "currency", "amount");
+
+            const amount = Number(amountString);
+
+            const [backgroundColor, textColor] = getDonationColors(amount);
+        
+            const header = createDonationHeader(authorName, avatarUri, currency, amount);
+            shadow.appendChild(header);
+
+            const messageContainer = document.createElement("div");
+            messageContainer.appendChild(document.createElement("slot"));
+            messageContainer.id = "message-container";
+
+            shadow.appendChild(messageContainer);
+
+            shadow.innerHTML += `
+            <style>
+                div {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-evenly;
+                }
+                #message-container {
+                    padding: 10px;
+                }
+                :host {
+                    color: ${textColor};
+                    background-color: ${backgroundColor};
+                    display: flex;
+                    flex-direction: column;
+                    border: 1px solid gray;
+                    border-radius: 10px;
+                    flex-grow: unset;
+                }
+            </style>
+            `
+        }
+    }
+
+    class DonationImageMessage extends HTMLElement {
+        connectedCallback() {
+            this.attachShadow({ mode: "open" });
+
+            const shadow = this.shadowRoot;
+
+            const {
+                author: authorName,
+                avatarUri,
+                currency,
+                amount: amountString,
+                image: imageUri,
+            } = getMultipleAttributes(this, "author", "avatarUri", "currency", "amount", "image");
+
+            const amount = Number(amountString);
+
+            const [backgroundColor, textColor] = getDonationColors(amount);
+        
+            const header = createDonationHeader(authorName, avatarUri, currency, amount);
+            shadow.appendChild(header);
+
+            const messageContainer = document.createElement("div");
+            const image = document.createElement("img");
+            image.src = imageUri;
+            // TODO: figure out a better max height
+            image.style = "max-height: 200px";
+            messageContainer.appendChild(image);
+
+            shadow.appendChild(messageContainer);
+
+            shadow.innerHTML += `
+            <style>
+                div {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-evenly;
+                }
+                #message-container {
+                    padding: 10px;
+                }
+                :host {
+                    color: ${textColor};
+                    background-color: ${backgroundColor};
+                    display: flex;
+                    flex-direction: column;
+                    border: 1px solid gray;
+                    border-radius: 10px;
+                    flex-grow: unset;
+                }
+            </style>
+            `
+        }
+    }
+
+
     // This loop waits till the webUI bridge is connected before setting up the custom tags. This lets information
     // be passed back and forth between the program and interface.
     // First waits 250ms, then checks in loops of 10ms (timing took somewhere just below 300ms in testing)
@@ -80,6 +245,8 @@
             }
             globalThis.customElements.define("config-slider", ConfigBuilderSlider)
             globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
+            customElements.define("donation-text-message", DonationTextMessage);
+            customElements.define("donation-image-message", DonationImageMessage);
         } catch {
             setTimeout(waitForWebUI, 10)
         }
