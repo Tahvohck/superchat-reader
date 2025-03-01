@@ -74,7 +74,6 @@ export class ConfigurationBuilder {
 const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text();
 const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text();
 const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text();
-const TextboxHtmlSnippet = await (await UISnippets.load('textbox.html')).text();
 
 // #region element interfaces
 interface CheckboxOptions {
@@ -90,6 +89,7 @@ interface SliderOptions {
 interface TextboxOptions {
     callback?: (newVal: string) => void
     startValue?: string
+    placeholder?: string
 }
 interface ButtonOptions {
     callback?: () => void
@@ -179,9 +179,20 @@ export class ConfigSlider extends ConfigElementBase implements SliderOptions {
 
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox extends ConfigElementBase implements TextboxOptions {
-    snippet = TextboxHtmlSnippet;
+    get snippet() {
+        return `
+        <config-textbox
+            label="${this.label}"
+            uuid="${this.callbackIdentifier}" 
+            value="${this.startValue ?? ""}"
+            placeholder="${this.placeholder ?? ""}"
+        ></config-textbox>
+        `
+    }
+
     readonly callback = console.log
-    readonly startValue = "Enter Text Here"
+    readonly startValue?: string;
+    readonly placeholder?: string;
 
     constructor(label: string, options: TextboxOptions) {
         super(label);

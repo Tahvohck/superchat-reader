@@ -12,6 +12,10 @@
         return out;
     }
 
+    function sayWhat() {
+        console.log("what");
+    }
+
     class ConfigBuilderSlider extends HTMLElement{
         connectedCallback() {
             const uuid = this.getAttribute("uuid")
@@ -80,6 +84,46 @@
             // Add child nodes
             shadow.appendChild(label)
             shadow.appendChild(checkbox)
+        }
+    }
+
+    class ConfigBuilderTextbox extends HTMLElement {
+        connectedCallback() {
+            const {
+                uuid, label, value, placeholder
+            } = getMultipleAttributes(this, "uuid", "label", "value", "placeholder");
+
+            if (!uuid) {
+                throw new Error("Custom textbox must have a UUID")
+            }
+            const shadow = this.attachShadow({mode: "closed"})
+
+            const labelElement = document.createElement("label");
+            labelElement.htmlFor = uuid;
+            labelElement.innerText = label;
+            shadow.appendChild(labelElement);
+
+            shadow.appendChild(document.createElement("br"));
+
+            const input = document.createElement("input");
+            input.id = uuid;
+            input.value = value;
+            input.placeholder = placeholder;
+
+            shadow.appendChild(input);
+
+            this.addEventListener("input", () => {
+                const value = shadow.querySelector("input").value;
+                webui.call(`textbox_${uuid}`, value);
+            });
+
+            shadow.innerHTML += `
+            <style>
+                :host {
+                    display: block;
+                }
+            </style>
+            `
         }
     }
 
@@ -234,18 +278,6 @@
         }
     }
 
-
-    class ConfigBuilderTextbox extends HTMLElement {
-        connectedCallback() {
-            const uuid = this.getAttribute("uuid")
-            const text = this.getAttribute("label")
-            if (!uuid) {
-                throw new Error("Custom textbox must have a UUID")
-            }
-            const shadow = this.attachShadow({mode: "closed"})
-        }
-    }
-
     // This loop waits till the webUI bridge is connected before setting up the custom tags. This lets information
     // be passed back and forth between the program and interface.
     // First waits 250ms, then checks in loops of 10ms (timing took somewhere just below 300ms in testing)
@@ -256,6 +288,7 @@
             }
             globalThis.customElements.define("config-slider", ConfigBuilderSlider)
             globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
+            customElements.define("config-textbox", ConfigBuilderTextbox);
             customElements.define("donation-text-message", DonationTextMessage);
             customElements.define("donation-image-message", DonationImageMessage);
         } catch {
