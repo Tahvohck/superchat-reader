@@ -146,7 +146,8 @@ export class ConfigCheckbox extends ConfigElementBase implements CheckboxOptions
             tagName: "config-checkbox", 
             attr: {
                 label: this.label,
-                uuid: this.callbackIdentifier
+                uuid: this.callbackIdentifier,
+                checked: this.startValue
             }
         }
     }
@@ -187,7 +188,7 @@ export class ConfigSlider extends ConfigElementBase implements SliderOptions {
                 min: this.range[0],
                 max: this.range[1],
                 step: this.step,
-                startValue: this.startValue
+                value: this.startValue
             }
         }
     }
