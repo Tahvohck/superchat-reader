@@ -1,7 +1,7 @@
 import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
-import { z } from 'zod';
+import { z as zod } from 'zod';
 
 export class ConfigurationBuilder {
     // deno-lint-ignore no-explicit-any
@@ -12,7 +12,7 @@ export class ConfigurationBuilder {
      * @param label The text to display next to the checkbox
      * @param callback A function to be called when the value changes
      */
-    addCheckbox(label: string, options: z.input<typeof ConfigCheckboxOptions>): this {
+    addCheckbox(label: string, options: zod.input<typeof ConfigCheckboxOptions>): this {
         this.elements.push(new ConfigCheckbox(label, options));
         return this;
     }
@@ -83,17 +83,17 @@ export class ConfigurationBuilder {
 
 type BuildReturnType = { tagName: string; attr: Record<string, string | number | boolean> };
 /** Items that all elements in the configuration panel share */
-abstract class ConfigElementBase<Schema extends z.Schema> {
+abstract class ConfigElementBase<Schema extends zod.Schema> {
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
-    protected options: z.infer<Schema>;
+    protected options: zod.infer<Schema>;
 
     /**
      * @param label Element label, typically displayed next to the element
      * @param replaceObject Map of key-value pairs to replace inside the snippet. {label} and {callbackID} are
      * automatically provided.
      */
-    constructor(readonly label: string, schema: Schema, options: z.input<Schema>) {
+    constructor(readonly label: string, schema: Schema, options: zod.input<Schema>) {
         this.callbackIdentifier = crypto.randomUUID().replaceAll('-', '_');
         const parsed = schema.parse(options);
         this.options = parsed;
@@ -105,15 +105,15 @@ abstract class ConfigElementBase<Schema extends z.Schema> {
 }
 
 // #region Configuration Elements
-const ConfigCheckboxOptions = z.object({
-    value: z.boolean().optional(),
-    callback: z.function()
-        .args(z.boolean())
-        .returns(z.void())
+const ConfigCheckboxOptions = zod.object({
+    value: zod.boolean().optional(),
+    callback: zod.function()
+        .args(zod.boolean())
+        .returns(zod.void())
         .optional()
         .default(() => console.log),
 });
-type ConfigCheckboxOptions = z.input<typeof ConfigCheckboxOptions>;
+type ConfigCheckboxOptions = zod.input<typeof ConfigCheckboxOptions>;
 
 /** Dynamically handled checkbox for configuration */
 class ConfigCheckbox extends ConfigElementBase<typeof ConfigCheckboxOptions> {
@@ -139,13 +139,13 @@ class ConfigCheckbox extends ConfigElementBase<typeof ConfigCheckboxOptions> {
     }
 }
 
-const ConfigSliderOptions = z.object({
-    value: z.number(),
-    callback: z.function()
-        .args(z.number())
-        .returns(z.void())
+const ConfigSliderOptions = zod.object({
+    value: zod.number(),
+    callback: zod.function()
+        .args(zod.number())
+        .returns(zod.void())
         .default(() => console.log),
-    range: z.tuple([z.number().nonnegative(), z.number().nonnegative()]).default([0, 10]).superRefine(
+    range: zod.tuple([zod.number().nonnegative(), zod.number().nonnegative()]).default([0, 10]).superRefine(
         ([min, max], ctx) => {
             if (min >= max) {
                 ctx.addIssue({
@@ -156,10 +156,10 @@ const ConfigSliderOptions = z.object({
             }
         },
     ),
-    step: z.number().nonnegative(),
+    step: zod.number().nonnegative(),
 });
 
-type ConfigSliderOptions = z.input<typeof ConfigSliderOptions>;
+type ConfigSliderOptions = zod.input<typeof ConfigSliderOptions>;
 
 /** Dynamically handled slider for configuration */
 class ConfigSlider extends ConfigElementBase<typeof ConfigSliderOptions> {
@@ -189,29 +189,29 @@ class ConfigSlider extends ConfigElementBase<typeof ConfigSliderOptions> {
     }
 }
 
-const ConfigTextBoxOptions = z.union([
-    z.object({
-        placeholder: z.string().optional(),
-        type: z.literal('text'),
-        value: z.string().optional(),
-        callback: z.function()
-            .args(z.string())
-            .returns(z.void())
+const ConfigTextBoxOptions = zod.union([
+    zod.object({
+        placeholder: zod.string().optional(),
+        type: zod.literal('text'),
+        value: zod.string().optional(),
+        callback: zod.function()
+            .args(zod.string())
+            .returns(zod.void())
             .optional()
             .default(() => console.log),
     }),
-    z.object({
-        placeholder: z.string().optional(),
-        type: z.literal('number'),
-        value: z.number().optional(),
-        callback: z.function()
-            .args(z.number())
-            .returns(z.void())
+    zod.object({
+        placeholder: zod.string().optional(),
+        type: zod.literal('number'),
+        value: zod.number().optional(),
+        callback: zod.function()
+            .args(zod.number())
+            .returns(zod.void())
             .optional()
             .default(() => console.log),
     }),
 ]);
-type ConfigTextBoxOptions = z.input<typeof ConfigTextBoxOptions>;
+type ConfigTextBoxOptions = zod.input<typeof ConfigTextBoxOptions>;
 
 /** Dynamically handled textbox for configuration */
 class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
@@ -244,10 +244,10 @@ class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
     }
 }
 
-const ConfigButtonOptions = z.object({
-    callback: z.function().returns(z.void()).optional().default(console.log),
+const ConfigButtonOptions = zod.object({
+    callback: zod.function().returns(zod.void()).optional().default(console.log),
 });
-type ConfigButtonOptions = z.input<typeof ConfigButtonOptions>;
+type ConfigButtonOptions = zod.input<typeof ConfigButtonOptions>;
 
 /** Dynamically handled button for configuration */
 class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
