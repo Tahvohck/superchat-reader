@@ -35,8 +35,21 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addTextBox<T extends "text" | "number">(label: string, options: TextboxOptions<T>): this {
+    addTextBox(label: string, options: TextboxOptions<"text">): this {
         this.elements.push(new ConfigTextBox(label, options));
+        return this;
+    }
+
+    /**
+     * Add a textboxt to the configuration panel, where the user can input any text
+     * TODO: Probably make validate just a regex
+     * @param label The text to display next to the textbox
+     * @param defaultVal The default value of the textbox
+     * @param callback The function to call when the value changes, after validation
+     * @param validate The function to call when the value changes, to validate the new value
+     */
+    addNumberBox(label: string, options: TextboxOptions<"number">): this {
+        this.elements.push(new ConfigNumberBox(label, options));
         return this;
     }
 
@@ -194,15 +207,15 @@ export class ConfigSlider extends ConfigElementBase {
 }
 
 /** Dynamically handled textbox for configuration */
-export class ConfigTextBox<T extends TextboxOptionsBoxType> extends ConfigElementBase {
-    readonly options : Required<TextboxOptions<T>> = {
+export class ConfigTextBox extends ConfigElementBase {
+    readonly options : Required<TextboxOptions<"text">> = {
         callback: console.log,
         startValue: "DEFAULT TEXTBOX",
         placeholder: "TEXTBOX PLACEHOLDER",
-        type: "text" as T
+        type: "text"
     }
 
-    constructor(label: string, options: TextboxOptions<T>) {
+    constructor(label: string, options: TextboxOptions<"text">) {
         super(label);
         Object.assign(this.options, options)
     }
@@ -222,13 +235,29 @@ export class ConfigTextBox<T extends TextboxOptionsBoxType> extends ConfigElemen
 
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
-            // TODO: EATS: Figure out why this isn't understanding the typing anymore -Tahvohck
-            if (this.options.type === "text") {
-                this.options.callback(arg.string(0));
-            } else {
-                this.options.callback(arg.number(0));
-            }
+            this.options.callback(arg.string(0));
         });
+    }
+}
+
+export class ConfigNumberBox extends ConfigTextBox {
+    //@ts-expect-error Forcing type change
+    override options: Required<TextboxOptions<'number'>> = {
+        callback: console.log,
+        startValue: "1000",
+        placeholder: "NUMBERBOX PLACEHOLDER",
+        type: "number"
+    }
+
+    constructor(label: string, options: TextboxOptions<"number">) {
+        super(label, {})
+        Object.assign(this.options, options)
+    }
+
+    override bind(wui: WebUI): void {
+        wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
+            this.options.callback(arg.number(0));
+        });        
     }
 }
 
@@ -270,6 +299,7 @@ if (import.meta.main) {
         step: 2
     })
     .addTextBox(    'Type here!', {})
+    .addNumberBox(  'Number here!', {})
     .addButton(     'Click to exit', {
         callback: () => {
             win.close()
