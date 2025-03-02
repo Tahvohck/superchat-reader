@@ -43,5 +43,10 @@ class ProgramConfig extends SavedConfig {
             throw new Error(`Program Config invalid: logLevel must be one of [${options}]`);
         }
     }
+
+    /** Returns non-configurable minimums.*/
+    getMinimumWindowSize (): [width: number, height: number] {
+        return [this[MIN_WIDTH], this[MIN_HEIGHT]]
+    }
 }
 export type ProgramConfigInterface = ProgramConfig;
