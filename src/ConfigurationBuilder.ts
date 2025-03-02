@@ -35,7 +35,7 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addTextBox(label: string, options: TextboxOptions): this {
+    addTextBox<T extends "text" | "number">(label: string, options: TextboxOptions<T>): this {
         this.elements.push(new ConfigTextBox(label, options));
         return this;
     }
@@ -92,10 +92,11 @@ interface SliderOptions {
     readonly step?: number
     readonly startValue?: number
 }
-interface TextboxOptions {
-    callback?: (newVal: string) => void
+interface TextboxOptions<Type extends "text" | "number" = "text"> {
+    callback?: Type extends "text" ? (value: string) => void : (value: number) => void;
     startValue?: string
     placeholder?: string
+    type?: Type;
 }
 interface ButtonOptions {
     callback?: () => void
@@ -201,7 +202,7 @@ export class ConfigSlider extends ConfigElementBase implements SliderOptions {
 }
 
 /** Dynamically handled textbox for configuration */
-export class ConfigTextBox extends ConfigElementBase implements TextboxOptions {
+export class ConfigTextBox<Type extends "text" | "number" = "text"> extends ConfigElementBase implements TextboxOptions<Type> {
     get snippet() {
         return `
         <config-textbox
@@ -209,15 +210,17 @@ export class ConfigTextBox extends ConfigElementBase implements TextboxOptions {
             uuid="${this.callbackIdentifier}" 
             value="${this.startValue ?? ""}"
             placeholder="${this.placeholder ?? ""}"
+            type="${this.type}"
         ></config-textbox>
         `
     }
 
-    readonly callback = console.log
+    readonly callback: (value: string | number) => void = console.log;
     readonly startValue?: string;
     readonly placeholder?: string;
+    readonly type: Type = "text" as Type;
 
-    constructor(label: string, options: TextboxOptions) {
+    constructor(label: string, options: TextboxOptions<Type>) {
         super(label);
         Object.assign(this, options)
     }
@@ -229,14 +232,19 @@ export class ConfigTextBox extends ConfigElementBase implements TextboxOptions {
                 label: this.label,
                 uuid: this.callbackIdentifier,
                 value: this.startValue ?? "",
-                placeholder: this.placeholder ?? ""
+                placeholder: this.placeholder ?? "",
+                type: this.type,
             }
         }
     }
 
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
-            this.callback(arg.string(0));
+            if (this.type === "text") {
+                this.callback(arg.string(0));
+            } else {
+                this.callback(arg.number(0));
+            }
         });
     }
 }

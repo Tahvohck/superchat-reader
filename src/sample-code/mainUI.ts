@@ -24,7 +24,8 @@ const cb = new ConfigurationBuilder()
     })
     .addCheckbox('check', {})
     .addSlider('slider', {})
-    .addTextBox('Type here!', {});
+    .addTextBox('Type here!', {})
+    .addTextBox('Type your number here', { type: "number" });
 
 mainWindowHtml = mainWindowHtml.replace("<config />", cb.render())
 cb.bind(mainWindow)

@@ -90,8 +90,8 @@
     class ConfigBuilderTextbox extends HTMLElement {
         connectedCallback() {
             const {
-                uuid, label, value, placeholder
-            } = getMultipleAttributes(this, "uuid", "label", "value", "placeholder");
+                uuid, label, value, placeholder, type
+            } = getMultipleAttributes(this, "uuid", "label", "value", "placeholder", "type");
 
             if (!uuid) {
                 throw new Error("Custom textbox must have a UUID")
@@ -109,6 +109,7 @@
             input.id = uuid;
             input.value = value;
             input.placeholder = placeholder;
+            input.type = type;
 
             shadow.appendChild(input);
 
