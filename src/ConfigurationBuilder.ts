@@ -77,10 +77,6 @@ export class ConfigurationBuilder {
     }
 }
 
-const CheckboxHtmlSnippet = await (await UISnippets.load('checkbox.html')).text();
-const ButtonHtmlSnippet = await (await UISnippets.load('button.html')).text();
-const SliderHtmlSnippet = await (await UISnippets.load('slider.html')).text();
-
 // #region element interfaces
 interface CheckboxOptions {
     readonly callback?: (checkState: boolean) => void
@@ -106,11 +102,6 @@ type ElementOptions = CheckboxOptions | SliderOptions | TextboxOptions | ButtonO
 
 /** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
-    /**
-     * HTML snippet that defines the rendered config element. Has keys like {label} that will be replaced
-     * during the render phase.
-     */
-    abstract readonly snippet: string
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
     /** Function to be called when the element is interacted with */
@@ -133,7 +124,6 @@ abstract class ConfigElementBase {
 
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox extends ConfigElementBase implements CheckboxOptions {
-    snippet = CheckboxHtmlSnippet;
     readonly startValue = false;
     readonly callback = console.log;
 
@@ -162,7 +152,6 @@ export class ConfigCheckbox extends ConfigElementBase implements CheckboxOptions
 
 /** Dynamically handled slider for configuration */
 export class ConfigSlider extends ConfigElementBase implements SliderOptions {
-    snippet = SliderHtmlSnippet;
     readonly callback = console.log
     readonly range: [number, number] = [0, 10]
     readonly step = 1
@@ -203,18 +192,6 @@ export class ConfigSlider extends ConfigElementBase implements SliderOptions {
 
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox<Type extends "text" | "number" = "text"> extends ConfigElementBase implements TextboxOptions<Type> {
-    get snippet() {
-        return `
-        <config-textbox
-            label="${this.label}"
-            uuid="${this.callbackIdentifier}" 
-            value="${this.startValue ?? ""}"
-            placeholder="${this.placeholder ?? ""}"
-            type="${this.type}"
-        ></config-textbox>
-        `
-    }
-
     readonly callback: (value: string | number) => void = console.log;
     readonly startValue?: string;
     readonly placeholder?: string;
@@ -251,7 +228,6 @@ export class ConfigTextBox<Type extends "text" | "number" = "text"> extends Conf
 
 /** Dynamically handled button for configuration */
 export class ConfigButton extends ConfigElementBase implements ButtonOptions {
-    snippet = ButtonHtmlSnippet;
     readonly callback = () => {console.log(`Boop ${this.callbackIdentifier}`)}
 
     constructor(label: string, options: ButtonOptions) {
