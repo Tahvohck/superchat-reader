@@ -107,7 +107,7 @@ type BuildReturnType = {tagName: string, attr: Record<string, string | number | 
 abstract class ConfigElementBase {
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
-    abstract options: ElementOptions
+    abstract options: Required<ElementOptions>
 
     /**
      * @param label Element label, typically displayed next to the element
@@ -125,7 +125,7 @@ abstract class ConfigElementBase {
 
 /** Dynamically handled checkbox for configuration */
 export class ConfigCheckbox extends ConfigElementBase {
-    readonly options = {
+    readonly options: Required<CheckboxOptions> = {
         startValue: false,
         callback: console.log
     }
@@ -155,7 +155,7 @@ export class ConfigCheckbox extends ConfigElementBase {
 
 /** Dynamically handled slider for configuration */
 export class ConfigSlider extends ConfigElementBase {
-    readonly options: SliderOptions = {
+    readonly options: Required<SliderOptions> = {
         callback: console.log,
         range: [0, 10],
         step: 1,
@@ -165,7 +165,7 @@ export class ConfigSlider extends ConfigElementBase {
     constructor( label: string, options: SliderOptions ) {
         super(label);
         Object.assign(this.options, options)
-        const [min, max] = this.options.range!
+        const [min, max] = this.options.range
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
@@ -177,10 +177,10 @@ export class ConfigSlider extends ConfigElementBase {
             attr: {
                 label:  this.label,
                 uuid:   this.callbackIdentifier,
-                min:        this.options.range![0],
-                max:        this.options.range![1],
-                step:       this.options.step!,
-                startValue: this.options.startValue!
+                min:        this.options.range[0],
+                max:        this.options.range[1],
+                step:       this.options.step,
+                startValue: this.options.startValue
             }
         }
     }
@@ -188,14 +188,14 @@ export class ConfigSlider extends ConfigElementBase {
     bind(wui: WebUI): void {
         wui.bind(`slider_${this.callbackIdentifier}`, ({ arg }) => {
             const value = arg.number(0);
-            this.options.callback!(value);
+            this.options.callback(value);
         });
     }
 }
 
 /** Dynamically handled textbox for configuration */
 export class ConfigTextBox<T extends TextboxOptionsBoxType> extends ConfigElementBase {
-    readonly options : TextboxOptions<T> = {
+    readonly options : Required<TextboxOptions<T>> = {
         callback: console.log,
         startValue: "DEFAULT TEXTBOX",
         placeholder: "TEXTBOX PLACEHOLDER",
@@ -224,9 +224,9 @@ export class ConfigTextBox<T extends TextboxOptionsBoxType> extends ConfigElemen
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
             // TODO: EATS: Figure out why this isn't understanding the typing anymore -Tahvohck
             if (this.options.type === "text") {
-                this.options.callback!(arg.string(0));
+                this.options.callback(arg.string(0));
             } else {
-                this.options.callback!(arg.number(0));
+                this.options.callback(arg.number(0));
             }
         });
     }
@@ -234,7 +234,7 @@ export class ConfigTextBox<T extends TextboxOptionsBoxType> extends ConfigElemen
 
 /** Dynamically handled button for configuration */
 export class ConfigButton extends ConfigElementBase {
-    override readonly options: ButtonOptions = {
+    override readonly options: Required<ButtonOptions> = {
         callback: () => {console.log(`Boop ${this.callbackIdentifier}`)}
     }
 
@@ -253,7 +253,7 @@ export class ConfigButton extends ConfigElementBase {
     }
 
     bind(wui: WebUI): void {
-        wui.bind(this.callbackIdentifier, this.options.callback!);
+        wui.bind(this.callbackIdentifier, this.options.callback);
     }
 }
 
