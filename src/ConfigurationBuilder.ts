@@ -272,7 +272,7 @@ class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
     }
 
     bind(wui: WebUI): void {
-        wui.bind(this.callbackIdentifier, () => this.options.callback());
+        wui.bind(this.callbackIdentifier, this.options.callback);
     }
 }
 // #endregion
