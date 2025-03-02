@@ -15,16 +15,53 @@
             <p>Help</p>
         </div>
         <div id="content">
-            <div id="plugin-providers">
-                <p>Youtube</p>
-                <p>Demo</p>
+            <nav id="tab-selector">
+                <button data-tab-select="config" class="active" onclick="selectTab(this)">Config</button>
+                <button data-tab-select="messages" onclick="selectTab(this)">Messages</button>
+            </nav>
+            <div data-tab-name="config" class="tab-content" style="display: block;">
+                <div id="config-tab">
+                    <div id="plugin-providers">
+                        <p>Youtube</p>
+                        <p>Demo</p>
+                    </div>
+                    <div id="plugin-config">
+                        <config />
+                    </div>
+                </div>
             </div>
-            <div id="plugin-config">
-                <config />
-            </div>
-            <div id="message-container">
+            <div data-tab-name="messages" class="tab-content" style="display: none;">
+                <div id="message-container">
             </div>
         </div>
         <script-config-builder />
+        <script>
+            function selectTab(button) {
+                const id = button.getAttribute("data-tab-select");
+
+                const selected = document.querySelector(`.tab-content[data-tab-name="${id}"]`);
+                console.log(selected);
+                
+                if (!selected) {
+                    console.error(`No such tab: ${id}`);
+                    return;
+                }
+                selected.style = "display: block;";
+
+                button.classList.add("active");
+
+                const otherTabs = document.querySelectorAll(`.tab-content:not([data-tab-name^="${id}"])`);
+                console.log(otherTabs);
+
+                for (const tab of otherTabs) {
+                    tab.style = "display: none;";
+                }
+
+                const otherButtons = document.querySelectorAll(`button:not([data-tab-select="${id}"])`);
+                for (const button of otherButtons) {
+                    button.classList.remove("active");
+                }
+            }
+        </script>
     </body>
 </html>
