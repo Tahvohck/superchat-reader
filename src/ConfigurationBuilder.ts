@@ -275,9 +275,10 @@ class ConfigButton extends ConfigElementBase {
 
     build () {
         return {
-            tagName: "button",
+            tagName: "config-button",
             attr: {
-                id: this.callbackIdentifier
+                uuid: this.callbackIdentifier,
+                label: this.label
             }
         }
     }

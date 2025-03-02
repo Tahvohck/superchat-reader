@@ -1,3 +1,12 @@
+<style id="config-button">
+    :host button {
+        height: 3em;
+        width: 90%;
+        margin: 0.5em;
+        margin-left: 5%;
+        margin-right: 5%;
+    }
+</style>
 <script defer>
     /**
      * @param { HTMLElement } element
@@ -14,6 +23,25 @@
 
     function sayWhat() {
         console.log("what");
+    }
+
+    class ConfigBuilderButton extends HTMLElement {
+        connectedCallback() {
+            const {uuid, label} = getMultipleAttributes(this, "uuid", "label")
+            const shadow = this.attachShadow({mode: "closed"})
+            const button = document.createElement("button")
+            const style = new CSSStyleSheet()
+            for (const rule of document.getElementById("config-button").sheet.cssRules) {
+                style.insertRule(rule.cssText)
+            }
+
+            button.innerText = label
+            button.setAttribute("id", uuid)
+            button.onclick = globalThis[uuid]
+
+            shadow.adoptedStyleSheets = [style]
+            shadow.appendChild(button)
+        }
     }
 
     class ConfigBuilderSlider extends HTMLElement{
@@ -304,6 +332,7 @@
             if (!webui?.isConnected()) {
                 throw new Error()
             }
+            globalThis.customElements.define("config-button", ConfigBuilderButton)
             globalThis.customElements.define("config-slider", ConfigBuilderSlider)
             globalThis.customElements.define("config-checkbox", ConfigBuilderCheckbox)
             customElements.define("config-textbox", ConfigBuilderTextbox);
