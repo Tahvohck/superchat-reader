@@ -2,6 +2,8 @@ import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
 
+// TODO: rework how passed options are merged with defaults. This should also include some validation (maybe with zod?).
+
 export class ConfigurationBuilder {
     private elements: ConfigElementBase[] = [];
 
@@ -35,8 +37,8 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addTextBox(label: string, options: TextboxOptions<"text">): this {
-        this.elements.push(new ConfigTextBox(label, options));
+    addTextBox(label: string, options: Omit<StringboxOptions, 'type'>): this {
+        this.elements.push(new ConfigTextBox(label, { ...options, type: 'text' }));
         return this;
     }
 
@@ -48,8 +50,8 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addNumberBox(label: string, options: TextboxOptions<"number">): this {
-        this.elements.push(new ConfigNumberBox(label, options));
+    addNumberBox(label: string, options: Omit<NumberboxOptions, 'type'>): this {
+        this.elements.push(new ConfigTextBox(label, { ...options, type: 'number' }));
         return this;
     }
 
@@ -70,13 +72,13 @@ export class ConfigurationBuilder {
     render(): string {
         let content = '<div>';
         for (const elem of this.elements) {
-            const {tagName, attr} = elem.build();
-            let tagStr = `<${tagName} `
+            const { tagName, attr } = elem.build();
+            let tagStr = `<${tagName} `;
             for (const [name, value] of Object.entries(attr)) {
-                tagStr += `${name}="${value}" `
+                tagStr += `${name}="${value}" `;
             }
-            tagStr += `></${tagName}>`
-            content += tagStr
+            tagStr += `></${tagName}>`;
+            content += tagStr;
         }
         content += '</div>';
 
@@ -92,35 +94,46 @@ export class ConfigurationBuilder {
 
 // #region element interfaces
 interface CheckboxOptions {
-    readonly callback?: (checkState: boolean) => void
-    readonly startValue?: boolean
+    readonly callback?: (checkState: boolean) => void;
+    readonly startValue?: boolean;
 }
 interface SliderOptions {
-    readonly callback?: (newVal: number) => void
-    readonly range?: [number, number]
-    readonly step?: number
-    readonly startValue?: number
+    readonly callback?: (newVal: number) => void;
+    readonly range?: [number, number];
+    readonly step?: number;
+    readonly startValue?: number;
 }
 
-type TextboxOptionsBoxType = "text" | "number"
-interface TextboxOptions<Type extends TextboxOptionsBoxType> {
-    callback?: Type extends "text" ? (value: string) => void : (value: number) => void;
-    startValue?: string
-    placeholder?: string
-    type?: Type;
+type InputBoxOptionsBase = {
+    placeholder?: string;
+};
+
+interface StringboxOptions extends InputBoxOptionsBase {
+    callback?: (value: string) => void;
+    type?: 'text';
+    startValue?: string;
 }
+
+interface NumberboxOptions extends InputBoxOptionsBase {
+    callback?: (value: number) => void;
+    type: 'number';
+    startValue?: number;
+}
+
+type TextboxOptions = StringboxOptions | NumberboxOptions;
+
 interface ButtonOptions {
-    callback?: () => void
+    callback?: () => void;
 }
-type ElementOptions = CheckboxOptions | SliderOptions | TextboxOptions<TextboxOptionsBoxType> | ButtonOptions
+type ElementOptions = CheckboxOptions | SliderOptions | TextboxOptions | ButtonOptions;
 // #endregion
 
-type BuildReturnType = {tagName: string, attr: Record<string, string | number | boolean>}
+type BuildReturnType = { tagName: string; attr: Record<string, string | number | boolean> };
 /** Items that all elements in the configuration panel share */
 abstract class ConfigElementBase {
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
-    abstract options: Required<ElementOptions>
+    abstract options: ElementOptions;
 
     /**
      * @param label Element label, typically displayed next to the element
@@ -132,7 +145,7 @@ abstract class ConfigElementBase {
     }
 
     /** Render the element to tag metadata */
-    abstract build() : BuildReturnType
+    abstract build(): BuildReturnType;
     abstract bind(wui: WebUI): void;
 }
 
@@ -141,22 +154,22 @@ abstract class ConfigElementBase {
 class ConfigCheckbox extends ConfigElementBase {
     readonly options: Required<CheckboxOptions> = {
         startValue: false,
-        callback: console.log
-    }
+        callback: console.log,
+    };
 
     constructor(label: string, options: CheckboxOptions) {
         super(label);
-        Object.assign(this.options, options)
+        Object.assign(this.options, options);
     }
 
-    build () : BuildReturnType {
+    build(): BuildReturnType {
         return {
-            tagName: "config-checkbox", 
+            tagName: 'config-checkbox',
             attr: {
                 label: this.label,
-                uuid: this.callbackIdentifier
-            }
-        }
+                uuid: this.callbackIdentifier,
+            },
+        };
     }
 
     bind(wui: WebUI): void {
@@ -173,30 +186,30 @@ class ConfigSlider extends ConfigElementBase {
         callback: console.log,
         range: [0, 10],
         step: 1,
-        startValue: 5
-    }
+        startValue: 5,
+    };
 
-    constructor( label: string, options: SliderOptions ) {
+    constructor(label: string, options: SliderOptions) {
         super(label);
-        Object.assign(this.options, options)
-        const [min, max] = this.options.range
+        Object.assign(this.options, options);
+        const [min, max] = this.options.range;
         if (min >= max) {
             throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
         }
     }
 
-    build() : BuildReturnType {
+    build(): BuildReturnType {
         return {
-            tagName: "config-slider",
+            tagName: 'config-slider',
             attr: {
-                label:  this.label,
-                uuid:   this.callbackIdentifier,
-                min:        this.options.range[0],
-                max:        this.options.range[1],
-                step:       this.options.step,
-                startValue: this.options.startValue
-            }
-        }
+                label: this.label,
+                uuid: this.callbackIdentifier,
+                min: this.options.range[0],
+                max: this.options.range[1],
+                step: this.options.step,
+                startValue: this.options.startValue,
+            },
+        };
     }
 
     bind(wui: WebUI): void {
@@ -209,78 +222,61 @@ class ConfigSlider extends ConfigElementBase {
 
 /** Dynamically handled textbox for configuration */
 class ConfigTextBox extends ConfigElementBase {
-    readonly options : Required<TextboxOptions<"text">> = {
+    readonly options: TextboxOptions = {
         callback: console.log,
-        startValue: "DEFAULT TEXTBOX",
-        placeholder: "TEXTBOX PLACEHOLDER",
-        type: "text"
-    }
+        type: 'text',
+    };
 
-    constructor(label: string, options: TextboxOptions<"text">) {
+    constructor(label: string, options: TextboxOptions) {
         super(label);
-        Object.assign(this.options, options)
+        Object.assign(this.options, options);
     }
 
-    build () : BuildReturnType {
+    build(): BuildReturnType {
         return {
-            tagName: "config-textbox",
+            tagName: 'config-textbox',
             attr: {
                 label: this.label,
                 uuid: this.callbackIdentifier,
-                value: this.options.startValue ?? "",
-                placeholder: this.options.placeholder ?? "",
-                type: this.options.type as string,
-            }
-        }
+                value: this.options.startValue ?? '',
+                placeholder: this.options.placeholder ?? '',
+                type: this.options.type ?? 'text',
+            },
+        };
     }
 
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
-            this.options.callback(arg.string(0));
+            if (this.options.type === 'number') {
+                this.options.callback?.(arg.number(0));
+            } else {
+                this.options.callback?.(arg.string(0));
+            }
         });
-    }
-}
-
-class ConfigNumberBox extends ConfigTextBox {
-    //@ts-expect-error Forcing type change
-    override options: Required<TextboxOptions<'number'>> = {
-        callback: console.log,
-        startValue: "1000",
-        placeholder: "NUMBERBOX PLACEHOLDER",
-        type: "number"
-    }
-
-    constructor(label: string, options: TextboxOptions<"number">) {
-        super(label, {})
-        Object.assign(this.options, options)
-    }
-
-    override bind(wui: WebUI): void {
-        wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
-            this.options.callback(arg.number(0));
-        });        
     }
 }
 
 /** Dynamically handled button for configuration */
 class ConfigButton extends ConfigElementBase {
     override readonly options: Required<ButtonOptions> = {
-        callback: () => {console.log(`Boop ${this.callbackIdentifier}`)}
-    }
+        callback: () => {
+            console.log(`Boop ${this.callbackIdentifier}`);
+        },
+    };
 
     constructor(label: string, options: ButtonOptions) {
-        super(label)
-        Object.assign(this.options, options)
+        super(label);
+        Object.assign(this.options, options);
     }
 
-    build () {
+    build() {
         return {
-            tagName: "config-button",
+            tagName: 'config-button',
             attr: {
                 uuid: this.callbackIdentifier,
-                label: this.label
-            }
-        }
+                label: this.label,
+            },
+        };
     }
 
     bind(wui: WebUI): void {
@@ -292,25 +288,24 @@ class ConfigButton extends ConfigElementBase {
 if (import.meta.main) {
     const cb = new ConfigurationBuilder();
     const win = new WebUI();
-    const builderScript = await (await UISnippets.load('config-custom-elements.html')).text()
+    const builderScript = await (await UISnippets.load('config-custom-elements.html')).text();
 
-    cb.addButton(   'click here to boop', {})
-    .addCheckbox(   'check', {})
-    .addSlider(     'slider', {
-        range: [2, 20],
-        startValue: 12,
-        step: 2
-    })
-    .addTextBox(    'Type here!', {})
-    .addNumberBox(  'Number here!', {})
-    .addButton(     'Click to exit', {
-        callback: () => {
-            win.close()
-        }
-    });
+    cb.addButton('click here to boop', {})
+        .addCheckbox('check', {})
+        .addSlider('slider', {
+            range: [2, 20],
+            startValue: 12,
+            step: 2,
+        })
+        .addTextBox('Type here!', {})
+        .addNumberBox('Number here!', {})
+        .addButton('Click to exit', {
+            callback: () => {
+                win.close();
+            },
+        });
 
-    const html = 
-        `<html>
+    const html = `<html>
             <body>
                 ${cb.render()}
                 ${builderScript}
@@ -322,5 +317,5 @@ if (import.meta.main) {
     win.show(html).catch(() => {});
 
     await WebUI.wait();
-    console.log("exit program")
+    console.log('exit program');
 }
