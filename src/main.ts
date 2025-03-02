@@ -31,3 +31,5 @@ for await (const message of manager.readAll()) {
     if (message.messageType !== 'text') continue;
     console.log(`${message.author}: ${message.message}`);
 }
+
+console.log('Program complete');
