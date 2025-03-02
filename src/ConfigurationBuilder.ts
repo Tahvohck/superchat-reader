@@ -136,8 +136,9 @@ abstract class ConfigElementBase {
     abstract bind(wui: WebUI): void;
 }
 
+// #region Configuration Elements
 /** Dynamically handled checkbox for configuration */
-export class ConfigCheckbox extends ConfigElementBase {
+class ConfigCheckbox extends ConfigElementBase {
     readonly options: Required<CheckboxOptions> = {
         startValue: false,
         callback: console.log
@@ -167,7 +168,7 @@ export class ConfigCheckbox extends ConfigElementBase {
 }
 
 /** Dynamically handled slider for configuration */
-export class ConfigSlider extends ConfigElementBase {
+class ConfigSlider extends ConfigElementBase {
     readonly options: Required<SliderOptions> = {
         callback: console.log,
         range: [0, 10],
@@ -207,7 +208,7 @@ export class ConfigSlider extends ConfigElementBase {
 }
 
 /** Dynamically handled textbox for configuration */
-export class ConfigTextBox extends ConfigElementBase {
+class ConfigTextBox extends ConfigElementBase {
     readonly options : Required<TextboxOptions<"text">> = {
         callback: console.log,
         startValue: "DEFAULT TEXTBOX",
@@ -240,7 +241,7 @@ export class ConfigTextBox extends ConfigElementBase {
     }
 }
 
-export class ConfigNumberBox extends ConfigTextBox {
+class ConfigNumberBox extends ConfigTextBox {
     //@ts-expect-error Forcing type change
     override options: Required<TextboxOptions<'number'>> = {
         callback: console.log,
@@ -262,7 +263,7 @@ export class ConfigNumberBox extends ConfigTextBox {
 }
 
 /** Dynamically handled button for configuration */
-export class ConfigButton extends ConfigElementBase {
+class ConfigButton extends ConfigElementBase {
     override readonly options: Required<ButtonOptions> = {
         callback: () => {console.log(`Boop ${this.callbackIdentifier}`)}
     }
@@ -285,6 +286,7 @@ export class ConfigButton extends ConfigElementBase {
         wui.bind(this.callbackIdentifier, this.options.callback);
     }
 }
+// #endregion
 
 if (import.meta.main) {
     const cb = new ConfigurationBuilder();
