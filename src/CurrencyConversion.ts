@@ -5,7 +5,7 @@ import { assertEquals, assertGreater } from '@std/assert';
 import { default as CurrencySymbolMap } from '@app/CurrencyMap.json' with { type: 'json' };
 
 let ccCache: CurrencyAPIResponse;
-const ccCacheFilename = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
+export const CC_CACHE_FILEPATH = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
 const ccApi = 'https://open.er-api.com/v6/latest/USD';
 // TODO: This needs to be attributed per TOS <a href="https://www.exchangerate-api.com">Rates By Exchange Rate API</a>
 // The attribution is present in the console, but will need to be present in the GUI once present as well.
@@ -29,7 +29,7 @@ if (import.meta.main) {
 export async function loadCCCache() {
     if (!await isAvailable()) await updateCache();
     console.log('Rates By Exchange Rate API: https://www.exchangerate-api.com');
-    ccCache = JSON.parse(await Deno.readTextFile(ccCacheFilename));
+    ccCache = JSON.parse(await Deno.readTextFile(CC_CACHE_FILEPATH));
     console.log(
         'Next cache update due at: ' +
             new Date(ccCache.time_next_update_utc),
@@ -39,7 +39,7 @@ export async function loadCCCache() {
     // otherwise update the cache and reload it
     console.log('CC Cache out of date, reloading.');
     await updateCache();
-    ccCache = JSON.parse(await Deno.readTextFile(ccCacheFilename));
+    ccCache = JSON.parse(await Deno.readTextFile(CC_CACHE_FILEPATH));
 }
 
 /**
@@ -90,7 +90,7 @@ function isOutOfDate(): boolean {
 /** Checks if the cache file is present. */
 async function isAvailable(): Promise<boolean> {
     try {
-        await Deno.lstat(ccCacheFilename);
+        await Deno.lstat(CC_CACHE_FILEPATH);
         return true;
     } catch {
         return false;
@@ -99,7 +99,7 @@ async function isAvailable(): Promise<boolean> {
 
 /** Update the currency cache json from Exchange Rate API  */
 async function updateCache() {
-    await Deno.mkdir(path.dirname(ccCacheFilename), { recursive: true });
+    await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
     const resp = await fetch(ccApi);
     if (resp.status == 429) {
         console.error('Too many requests to conversion API. Wait 20 minutes and try again.');
@@ -109,14 +109,14 @@ async function updateCache() {
         throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
 
-    using file = await Deno.open(ccCacheFilename, {
+    using file = await Deno.open(CC_CACHE_FILEPATH, {
         create: true,
         write: true,
     });
     await resp.body!.pipeTo(file.writable);
 }
 
-type CurrencyAPIResponse = {
+export type CurrencyAPIResponse = {
     result: string;
     provider: string;
     documentation: string;
