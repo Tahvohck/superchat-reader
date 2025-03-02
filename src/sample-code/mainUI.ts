@@ -5,35 +5,34 @@ import { DemoProvider } from '@app/chat_providers/Demo.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 
+let mainWindowHtml = await (await UISnippets.load('index.html')).text();
+const mainWindowCss = await (await UISnippets.load('index.css')).text();
+const builderScript = await (await UISnippets.load('config-custom-elements.html')).text();
 
-let mainWindowHtml = await (await UISnippets.load('index.html')).text()
-const mainWindowCss = await (await UISnippets.load('index.css')).text()
-const builderScript = await (await UISnippets.load('config-custom-elements.html')).text()
-
-mainWindowHtml = mainWindowHtml.replace(/\s*css-builtin {.*?}/, mainWindowCss)
-mainWindowHtml = mainWindowHtml.replace(/<script-config-builder \/>/, builderScript)
+mainWindowHtml = mainWindowHtml.replace(/\s*css-builtin {.*?}/, mainWindowCss);
+mainWindowHtml = mainWindowHtml.replace(/<script-config-builder \/>/, builderScript);
 
 const mainWindow = new WebUI();
 
 const manager = new ProviderManager();
 await manager.init();
 
-const demoprov = new DemoProvider()
-const democonfig = new ConfigurationBuilder()
+const demoprov = new DemoProvider();
+const democonfig = new ConfigurationBuilder();
 
 manager.register(demoprov);
 
-await manager.activate("demo");
-demoprov.configure(democonfig)
-mainWindowHtml = mainWindowHtml.replace("<config />", democonfig.render())
-democonfig.bind(mainWindow)
+await manager.activate('demo');
+demoprov.configure(democonfig);
+mainWindowHtml = mainWindowHtml.replace('<config />', democonfig.render());
+democonfig.bind(mainWindow);
 
-mainWindow.setSize(800, 400)
+mainWindow.setSize(800, 400);
 await mainWindow.show(mainWindowHtml);
 
 for await (const message of manager.readAll()) {
     if (!mainWindow.isShown) break;
-    if (message.messageType === "text") {
+    if (message.messageType === 'text') {
         await mainWindow.script(`
             const container = document.querySelector("#message-container"); 
             container.innerHTML += \`<donation-text-message 
@@ -57,4 +56,4 @@ for await (const message of manager.readAll()) {
     }
 }
 
-await WebUI.wait()
+await WebUI.wait();
