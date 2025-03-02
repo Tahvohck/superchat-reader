@@ -134,7 +134,7 @@ class ConfigCheckbox extends ConfigElementBase<typeof ConfigCheckboxOptions> {
     bind(wui: WebUI): void {
         wui.bind(`checked_${this.callbackIdentifier}`, ({ arg }) => {
             const checkStatus = arg.boolean(0);
-            this.options.callback!(checkStatus);
+            this.options.callback(checkStatus);
         });
     }
 }
@@ -236,18 +236,18 @@ class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
             if (this.options.type === 'number') {
-                this.options.callback!(arg.number(0));
+                this.options.callback(arg.number(0));
             } else {
-                this.options.callback!(arg.string(0));
+                this.options.callback(arg.string(0));
             }
         });
     }
 }
 
 const ConfigButtonOptions = z.object({
-    callback: z.function().returns(z.void()).default(console.log).optional(),
+    callback: z.function().returns(z.void()).optional().default(console.log),
 });
-type ConfigButtonOptions = z.infer<typeof ConfigButtonOptions>;
+type ConfigButtonOptions = z.input<typeof ConfigButtonOptions>;
 
 /** Dynamically handled button for configuration */
 class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
@@ -266,7 +266,7 @@ class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
     }
 
     bind(wui: WebUI): void {
-        wui.bind(this.callbackIdentifier, () => this.options.callback?.());
+        wui.bind(this.callbackIdentifier, () => this.options.callback());
     }
 }
 // #endregion
