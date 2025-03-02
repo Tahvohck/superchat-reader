@@ -1,18 +1,18 @@
 import { crypto } from '@std/crypto/crypto';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
-
-// TODO: rework how passed options are merged with defaults. This should also include some validation (maybe with zod?).
+import { z } from 'zod';
 
 export class ConfigurationBuilder {
-    private elements: ConfigElementBase[] = [];
+    // deno-lint-ignore no-explicit-any
+    private elements: ConfigElementBase<any>[] = [];
 
     /**
      * Adds a checkbox to the configuration panel.
      * @param label The text to display next to the checkbox
      * @param callback A function to be called when the value changes
      */
-    addCheckbox(label: string, options: CheckboxOptions): this {
+    addCheckbox(label: string, options: z.input<typeof ConfigCheckboxOptions>): this {
         this.elements.push(new ConfigCheckbox(label, options));
         return this;
     }
@@ -24,7 +24,7 @@ export class ConfigurationBuilder {
      * @param max Maximum value
      * @param callback The function to call when the value changes
      */
-    addSlider(label: string, options: SliderOptions): this {
+    addSlider(label: string, options: ConfigSliderOptions): this {
         this.elements.push(new ConfigSlider(label, options));
         return this;
     }
@@ -37,21 +37,8 @@ export class ConfigurationBuilder {
      * @param callback The function to call when the value changes, after validation
      * @param validate The function to call when the value changes, to validate the new value
      */
-    addTextBox(label: string, options: Omit<StringboxOptions, 'type'>): this {
-        this.elements.push(new ConfigTextBox(label, { ...options, type: 'text' }));
-        return this;
-    }
-
-    /**
-     * Add a textboxt to the configuration panel, where the user can input any text
-     * TODO: Probably make validate just a regex
-     * @param label The text to display next to the textbox
-     * @param defaultVal The default value of the textbox
-     * @param callback The function to call when the value changes, after validation
-     * @param validate The function to call when the value changes, to validate the new value
-     */
-    addNumberBox(label: string, options: Omit<NumberboxOptions, 'type'>): this {
-        this.elements.push(new ConfigTextBox(label, { ...options, type: 'number' }));
+    addTextBox(label: string, options: ConfigTextBoxOptions): this {
+        this.elements.push(new ConfigTextBox(label, options));
         return this;
     }
 
@@ -60,7 +47,7 @@ export class ConfigurationBuilder {
      * @param label The text to display on the button
      * @param callback The function to call when the button is clicked
      */
-    addButton(label: string, options: ButtonOptions): this {
+    addButton(label: string, options: ConfigButtonOptions): this {
         this.elements.push(new ConfigButton(label, options));
         return this;
     }
@@ -92,56 +79,24 @@ export class ConfigurationBuilder {
     }
 }
 
-// #region element interfaces
-interface CheckboxOptions {
-    readonly callback?: (checkState: boolean) => void;
-    readonly startValue?: boolean;
-}
-interface SliderOptions {
-    readonly callback?: (newVal: number) => void;
-    readonly range?: [number, number];
-    readonly step?: number;
-    readonly startValue?: number;
-}
-
-type InputBoxOptionsBase = {
-    placeholder?: string;
-};
-
-interface StringboxOptions extends InputBoxOptionsBase {
-    callback?: (value: string) => void;
-    type?: 'text';
-    startValue?: string;
-}
-
-interface NumberboxOptions extends InputBoxOptionsBase {
-    callback?: (value: number) => void;
-    type: 'number';
-    startValue?: number;
-}
-
-type TextboxOptions = StringboxOptions | NumberboxOptions;
-
-interface ButtonOptions {
-    callback?: () => void;
-}
-type ElementOptions = CheckboxOptions | SliderOptions | TextboxOptions | ButtonOptions;
 // #endregion
 
 type BuildReturnType = { tagName: string; attr: Record<string, string | number | boolean> };
 /** Items that all elements in the configuration panel share */
-abstract class ConfigElementBase {
+abstract class ConfigElementBase<Schema extends z.Schema> {
     /** Unique ID to assign to webUI bindings */
     readonly callbackIdentifier;
-    abstract options: ElementOptions;
+    protected options: z.infer<Schema>;
 
     /**
      * @param label Element label, typically displayed next to the element
      * @param replaceObject Map of key-value pairs to replace inside the snippet. {label} and {callbackID} are
      * automatically provided.
      */
-    constructor(readonly label: string) {
+    constructor(readonly label: string, schema: Schema, options: z.input<Schema>) {
         this.callbackIdentifier = crypto.randomUUID().replaceAll('-', '_');
+        const parsed = schema.parse(options);
+        this.options = parsed;
     }
 
     /** Render the element to tag metadata */
@@ -150,16 +105,20 @@ abstract class ConfigElementBase {
 }
 
 // #region Configuration Elements
-/** Dynamically handled checkbox for configuration */
-class ConfigCheckbox extends ConfigElementBase {
-    readonly options: Required<CheckboxOptions> = {
-        startValue: false,
-        callback: console.log,
-    };
+const ConfigCheckboxOptions = z.object({
+    value: z.boolean().optional(),
+    callback: z.function()
+        .args(z.boolean())
+        .returns(z.void())
+        .optional()
+        .default(() => console.log),
+});
+type ConfigCheckboxOptions = z.input<typeof ConfigCheckboxOptions>;
 
-    constructor(label: string, options: CheckboxOptions) {
-        super(label);
-        Object.assign(this.options, options);
+/** Dynamically handled checkbox for configuration */
+class ConfigCheckbox extends ConfigElementBase<typeof ConfigCheckboxOptions> {
+    constructor(label: string, options: ConfigCheckboxOptions) {
+        super(label, ConfigCheckboxOptions, options);
     }
 
     build(): BuildReturnType {
@@ -175,27 +134,37 @@ class ConfigCheckbox extends ConfigElementBase {
     bind(wui: WebUI): void {
         wui.bind(`checked_${this.callbackIdentifier}`, ({ arg }) => {
             const checkStatus = arg.boolean(0);
-            this.options.callback(checkStatus);
+            this.options.callback!(checkStatus);
         });
     }
 }
 
-/** Dynamically handled slider for configuration */
-class ConfigSlider extends ConfigElementBase {
-    readonly options: Required<SliderOptions> = {
-        callback: console.log,
-        range: [0, 10],
-        step: 1,
-        startValue: 5,
-    };
+const ConfigSliderOptions = z.object({
+    value: z.number(),
+    callback: z.function()
+        .args(z.number())
+        .returns(z.void())
+        .default(() => console.log),
+    range: z.tuple([z.number().nonnegative(), z.number().nonnegative()]).default([0, 10]).superRefine(
+        ([min, max], ctx) => {
+            if (min >= max) {
+                ctx.addIssue({
+                    code: 'custom',
+                    message: 'min must be smaller than max',
+                    fatal: true,
+                });
+            }
+        },
+    ),
+    step: z.number().nonnegative(),
+});
 
-    constructor(label: string, options: SliderOptions) {
-        super(label);
-        Object.assign(this.options, options);
-        const [min, max] = this.options.range;
-        if (min >= max) {
-            throw new Deno.errors.InvalidData(`Min must be less than max [${min} !< ${max}]`);
-        }
+type ConfigSliderOptions = z.input<typeof ConfigSliderOptions>;
+
+/** Dynamically handled slider for configuration */
+class ConfigSlider extends ConfigElementBase<typeof ConfigSliderOptions> {
+    constructor(label: string, options: ConfigSliderOptions) {
+        super(label, ConfigSliderOptions, options);
     }
 
     build(): BuildReturnType {
@@ -207,7 +176,7 @@ class ConfigSlider extends ConfigElementBase {
                 min: this.options.range[0],
                 max: this.options.range[1],
                 step: this.options.step,
-                startValue: this.options.startValue,
+                startValue: this.options.value,
             },
         };
     }
@@ -220,15 +189,34 @@ class ConfigSlider extends ConfigElementBase {
     }
 }
 
-/** Dynamically handled textbox for configuration */
-class ConfigTextBox extends ConfigElementBase {
-    readonly options: TextboxOptions = {
-        callback: console.log,
-        type: 'text',
-    };
+const ConfigTextBoxOptions = z.union([
+    z.object({
+        placeholder: z.string().optional(),
+        type: z.literal('text'),
+        value: z.string().optional(),
+        callback: z.function()
+            .args(z.string())
+            .returns(z.void())
+            .optional()
+            .default(() => console.log),
+    }),
+    z.object({
+        placeholder: z.string().optional(),
+        type: z.literal('number'),
+        value: z.number().optional(),
+        callback: z.function()
+            .args(z.number())
+            .returns(z.void())
+            .optional()
+            .default(() => console.log),
+    }),
+]);
+type ConfigTextBoxOptions = z.input<typeof ConfigTextBoxOptions>;
 
-    constructor(label: string, options: TextboxOptions) {
-        super(label);
+/** Dynamically handled textbox for configuration */
+class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
+    constructor(label: string, options: ConfigTextBoxOptions) {
+        super(label, ConfigTextBoxOptions, options);
         Object.assign(this.options, options);
     }
 
@@ -238,7 +226,7 @@ class ConfigTextBox extends ConfigElementBase {
             attr: {
                 label: this.label,
                 uuid: this.callbackIdentifier,
-                value: this.options.startValue ?? '',
+                value: this.options.value ?? '',
                 placeholder: this.options.placeholder ?? '',
                 type: this.options.type ?? 'text',
             },
@@ -248,25 +236,23 @@ class ConfigTextBox extends ConfigElementBase {
     bind(wui: WebUI): void {
         wui.bind(`textbox_${this.callbackIdentifier}`, ({ arg }) => {
             if (this.options.type === 'number') {
-                this.options.callback?.(arg.number(0));
+                this.options.callback!(arg.number(0));
             } else {
-                this.options.callback?.(arg.string(0));
+                this.options.callback!(arg.string(0));
             }
         });
     }
 }
 
-/** Dynamically handled button for configuration */
-class ConfigButton extends ConfigElementBase {
-    override readonly options: Required<ButtonOptions> = {
-        callback: () => {
-            console.log(`Boop ${this.callbackIdentifier}`);
-        },
-    };
+const ConfigButtonOptions = z.object({
+    callback: z.function().returns(z.void()).default(console.log).optional(),
+});
+type ConfigButtonOptions = z.infer<typeof ConfigButtonOptions>;
 
-    constructor(label: string, options: ButtonOptions) {
-        super(label);
-        Object.assign(this.options, options);
+/** Dynamically handled button for configuration */
+class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
+    constructor(label: string, options: ConfigButtonOptions) {
+        super(label, ConfigButtonOptions, options);
     }
 
     build() {
@@ -280,7 +266,7 @@ class ConfigButton extends ConfigElementBase {
     }
 
     bind(wui: WebUI): void {
-        wui.bind(this.callbackIdentifier, this.options.callback);
+        wui.bind(this.callbackIdentifier, () => this.options.callback?.());
     }
 }
 // #endregion
@@ -294,11 +280,11 @@ if (import.meta.main) {
         .addCheckbox('check', {})
         .addSlider('slider', {
             range: [2, 20],
-            startValue: 12,
+            value: 12,
             step: 2,
         })
-        .addTextBox('Type here!', {})
-        .addNumberBox('Number here!', {})
+        .addTextBox('Type here!', { type: 'text' })
+        .addTextBox('Number here!', { type: 'number' })
         .addButton('Click to exit', {
             callback: () => {
                 win.close();
