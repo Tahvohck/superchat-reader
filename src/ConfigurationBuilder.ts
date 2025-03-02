@@ -3,6 +3,7 @@ import UISnippets from '@app/UISnippets/dir.ts';
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
 import { z as zod } from 'zod';
 
+// #region Main builder
 export class ConfigurationBuilder {
     // deno-lint-ignore no-explicit-any
     private elements: ConfigElementBase<any>[] = [];
@@ -78,7 +79,6 @@ export class ConfigurationBuilder {
         }
     }
 }
-
 // #endregion
 
 type BuildReturnType = { tagName: string; attr: Record<string, string | number | boolean> };
@@ -104,7 +104,7 @@ abstract class ConfigElementBase<Schema extends zod.Schema> {
     abstract bind(wui: WebUI): void;
 }
 
-// #region Configuration Elements
+// #region Checkbox element
 const ConfigCheckboxOptions = zod.object({
     value: zod.boolean().optional(),
     callback: zod.function()
@@ -138,7 +138,9 @@ class ConfigCheckbox extends ConfigElementBase<typeof ConfigCheckboxOptions> {
         });
     }
 }
+// #endregion
 
+// #region Slider element
 const ConfigSliderOptions = zod.object({
     value: zod.number(),
     callback: zod.function()
@@ -188,7 +190,9 @@ class ConfigSlider extends ConfigElementBase<typeof ConfigSliderOptions> {
         });
     }
 }
+// #endregion
 
+// #region Textbox element
 const ConfigTextBoxOptions = zod.union([
     zod.object({
         placeholder: zod.string().optional(),
@@ -243,7 +247,9 @@ class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
         });
     }
 }
+// #endregion
 
+// #region Button element
 const ConfigButtonOptions = zod.object({
     callback: zod.function().returns(zod.void()).optional().default(console.log),
 });
@@ -271,6 +277,7 @@ class ConfigButton extends ConfigElementBase<typeof ConfigButtonOptions> {
 }
 // #endregion
 
+// #region Debug
 if (import.meta.main) {
     const cb = new ConfigurationBuilder();
     const win = new WebUI();
@@ -305,3 +312,4 @@ if (import.meta.main) {
     await WebUI.wait();
     console.log('exit program');
 }
+// #endregion
