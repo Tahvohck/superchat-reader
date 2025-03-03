@@ -1,7 +1,6 @@
 import * as path from '@std/path';
 import { code } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
-import { assertEquals, assertGreater } from '@std/assert';
 import { default as CurrencySymbolMap } from '@app/CurrencyMap.json' with { type: 'json' };
 
 let ccCache: CurrencyAPIResponse;
@@ -20,6 +19,14 @@ if (import.meta.main) {
     console.log(`  1 USD is ${usdToArs} ARS`);
     console.log(`100 PHP is ${phpToYen} JPY`);
     console.log(`100 JPY is ${yenToUsd} USD`);
+}
+
+/**
+ * Checks if the currency conversion cache is loaded into memory.
+ * @returns true if cache is loaded
+ */
+export function isLoaded() {
+    return ccCache != null;
 }
 
 /**
@@ -142,35 +149,3 @@ export function getCurrencyCodeFromString(str: string) {
     }
     return code(CurrencySymbolMap[currencySymbol]?.toUpperCase() ?? '');
 }
-
-Deno.test('Currency Code Test', () => {
-    assertEquals(getCurrencyCodeFromString('CA$1')?.code, 'CAD');
-    assertEquals(getCurrencyCodeFromString('$1')?.code, 'USD');
-    assertEquals(getCurrencyCodeFromString('A$1')?.code, 'AUD');
-    assertEquals(getCurrencyCodeFromString('PhP1')?.code, 'PHP');
-    assertEquals(getCurrencyCodeFromString('¥ 10000')?.code, 'JPY');
-    assertEquals(getCurrencyCodeFromString('10000 ¥')?.code, 'JPY');
-});
-
-Deno.test('Able to load cache', async () => {
-    await loadCCCache();
-    assertEquals(null != ccCache, true);
-});
-
-Deno.test('ARS is weaker than USD', async () => {
-    if (!ccCache) {
-        await loadCCCache();
-    }
-    const usdAmount = 1;
-    const arsAmount = convertCurrency(usdAmount, code('USD'), code('ARS'));
-    assertGreater(arsAmount, usdAmount);
-});
-
-Deno.test('USD number is smaller than JPY', async () => {
-    if (!ccCache) {
-        await loadCCCache();
-    }
-    const jpyAmount = 100;
-    const usdAmount = convertCurrency(jpyAmount, code('JPY'));
-    assertGreater(jpyAmount, usdAmount);
-});
