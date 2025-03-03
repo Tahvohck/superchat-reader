@@ -50,7 +50,9 @@ function isOutOfDate(): boolean {
     return new Date() > new Date(ccCache.time_next_update_utc);
 }
 
-/** Update the currency cache json from Exchange Rate API  */
+/**
+ * Update the currency cache json from Exchange Rate API.
+ * Not used by the end-user, they should use loadCCCache instead. */
 async function updateCache() {
     await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
     const resp = await fetch(ccApi);
@@ -126,6 +128,11 @@ export function convertCurrency(
     return amount;
 }
 
+/**
+ * Extract the 3-letter ISO 4217 code that matches an input string.
+ * @param str input string, such as "$1000" or "CAD 1000"
+ * @returns a 3-letter ISO 4217 code, or a blank string if invalid
+ */
 export function getCurrencyCodeFromString(str: string) {
     const replaceRegex = /\s*[\d.,]+\s*/;
     const iso4217 = /[a-zA-Z]{3}/;
