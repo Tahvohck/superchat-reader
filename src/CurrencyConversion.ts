@@ -3,6 +3,21 @@ import { code } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
 import { default as CurrencySymbolMap } from '@app/CurrencyMap.json' with { type: 'json' };
 
+type Rates = Partial<Record<string, number>>;
+export type CurrencyAPIResponse = {
+    result: string;
+    provider: string;
+    documentation: string;
+    terms_of_use: string;
+    time_last_update_unix: number;
+    time_last_update_utc: string;
+    time_next_update_unix: number;
+    time_next_update_utc: string;
+    time_eol_unix: number;
+    base_code: string;
+    rates: Rates;
+};
+
 let ccCache: CurrencyAPIResponse;
 export const CC_CACHE_FILEPATH = path.join(Deno.cwd(), 'filecache', 'currency_cache.json');
 const ccApi = 'https://open.er-api.com/v6/latest/USD';
@@ -15,6 +30,43 @@ const ccApi = 'https://open.er-api.com/v6/latest/USD';
  */
 export function isLoaded() {
     return ccCache != null;
+}
+
+/** Checks if the cache file is present. */
+async function isAvailable(): Promise<boolean> {
+    try {
+        await Deno.lstat(CC_CACHE_FILEPATH);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/** Checks if the cache is out of date. */
+function isOutOfDate(): boolean {
+    if (!ccCache) {
+        throw new Deno.errors.BadResource('Currency Cache was never loaded.');
+    }
+    return new Date() > new Date(ccCache.time_next_update_utc);
+}
+
+/** Update the currency cache json from Exchange Rate API  */
+async function updateCache() {
+    await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
+    const resp = await fetch(ccApi);
+    if (resp.status == 429) {
+        console.error('Too many requests to conversion API. Wait 20 minutes and try again.');
+        throw new Deno.errors.ConnectionRefused('Too many requests to currency conversion API (how?)');
+    }
+    if (resp.status != 200) {
+        throw new Deno.errors.NotFound('Could not connect to currency conversion API');
+    }
+
+    using file = await Deno.open(CC_CACHE_FILEPATH, {
+        create: true,
+        write: true,
+    });
+    await resp.body!.pipeTo(file.writable);
 }
 
 /**
@@ -73,59 +125,6 @@ export function convertCurrency(
     amount = Math.floor(amount * factor) / factor;
     return amount;
 }
-
-/** Checks if the cache is out of date. */
-function isOutOfDate(): boolean {
-    if (!ccCache) {
-        throw new Deno.errors.BadResource('Currency Cache was never loaded.');
-    }
-    return new Date() > new Date(ccCache.time_next_update_utc);
-}
-
-/** Checks if the cache file is present. */
-async function isAvailable(): Promise<boolean> {
-    try {
-        await Deno.lstat(CC_CACHE_FILEPATH);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-/** Update the currency cache json from Exchange Rate API  */
-async function updateCache() {
-    await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
-    const resp = await fetch(ccApi);
-    if (resp.status == 429) {
-        console.error('Too many requests to conversion API. Wait 20 minutes and try again.');
-        throw new Deno.errors.ConnectionRefused('Too many requests to currency conversion API (how?)');
-    }
-    if (resp.status != 200) {
-        throw new Deno.errors.NotFound('Could not connect to currency conversion API');
-    }
-
-    using file = await Deno.open(CC_CACHE_FILEPATH, {
-        create: true,
-        write: true,
-    });
-    await resp.body!.pipeTo(file.writable);
-}
-
-export type CurrencyAPIResponse = {
-    result: string;
-    provider: string;
-    documentation: string;
-    terms_of_use: string;
-    time_last_update_unix: number;
-    time_last_update_utc: string;
-    time_next_update_unix: number;
-    time_next_update_utc: string;
-    time_eol_unix: number;
-    base_code: string;
-    rates: Rates;
-};
-
-type Rates = Partial<Record<string, number>>;
 
 export function getCurrencyCodeFromString(str: string) {
     const replaceRegex = /\s*[\d.,]+\s*/;
