@@ -251,7 +251,10 @@ class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
 
 // #region Button element
 const ConfigButtonOptions = zod.object({
-    callback: zod.function().returns(zod.void()).optional().default(console.log),
+    callback: zod
+        .function().returns(zod.void())
+        .optional()
+        .default(() => () => console.log('Boop')),
 });
 type ConfigButtonOptions = zod.input<typeof ConfigButtonOptions>;
 
