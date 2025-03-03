@@ -221,7 +221,6 @@ type ConfigTextBoxOptions = zod.input<typeof ConfigTextBoxOptions>;
 class ConfigTextBox extends ConfigElementBase<typeof ConfigTextBoxOptions> {
     constructor(label: string, options: ConfigTextBoxOptions) {
         super(label, ConfigTextBoxOptions, options);
-        Object.assign(this.options, options);
     }
 
     build(): BuildReturnType {
