@@ -32,10 +32,10 @@ export function isLoaded() {
     return ccCache != null;
 }
 
-/** Checks if the cache file is present. */
+/** Checks if the cache file is present and parseable. */
 async function isAvailable(): Promise<boolean> {
     try {
-        await Deno.lstat(CC_CACHE_FILEPATH);
+        JSON.parse(await Deno.readTextFile(CC_CACHE_FILEPATH));
         return true;
     } catch {
         return false;
