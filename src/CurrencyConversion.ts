@@ -1,5 +1,5 @@
 import * as path from '@std/path';
-import { code } from 'currency-codes';
+import { code, codes } from 'currency-codes';
 import type { CurrencyCodeRecord } from 'currency-codes';
 import { default as CurrencySymbolMap } from '@app/CurrencyMap.json' with { type: 'json' };
 
@@ -126,6 +126,16 @@ export function convertCurrency(
     // use Math.floor because conversions are gonna take money, not give extra
     amount = Math.floor(amount * factor) / factor;
     return amount;
+}
+
+/** Get the list of codes that are both valid ISO 4217 AND our conversion API knows about. */
+export function getValidCodes() {
+    if (!isLoaded()) {
+        throw new Deno.errors.BadResource('Currency cache has not yet been initialized.');
+    }
+    const theirCodes = new Set(codes());
+    const ourCodes = new Set(Object.keys(ccCache.rates));
+    return theirCodes.intersection(ourCodes);
 }
 
 const replaceRegex = /\s*[\d.,]+\s*/;
