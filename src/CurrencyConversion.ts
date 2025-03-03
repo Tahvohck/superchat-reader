@@ -58,7 +58,6 @@ function isOutOfDate(): boolean {
 async function updateCache() {
     await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
     const resp = await fetch(ccApi);
-    // deno-coverage-ignore-start These are errors on the API side and we don't care about them.
     if (resp.status == 429) {
         console.error('Too many requests to conversion API. Wait 20 minutes and try again.');
         throw new Deno.errors.ConnectionRefused('Too many requests to currency conversion API (how?)');
@@ -66,7 +65,6 @@ async function updateCache() {
     if (resp.status != 200) {
         throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
-    // deno-coverage-ignore-stop
 
     using file = await Deno.open(CC_CACHE_FILEPATH, {
         create: true,
