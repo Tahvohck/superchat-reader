@@ -76,13 +76,13 @@ async function updateCache() {
  * If the cache is out of date, updates it.
  */
 export async function loadCCCache() {
-    if (!await isAvailable()) await updateCache();
-    console.log('Rates By Exchange Rate API: https://www.exchangerate-api.com');
-    ccCache = JSON.parse(await Deno.readTextFile(CC_CACHE_FILEPATH));
-    console.log(
-        'Next cache update due at: ' +
-            new Date(ccCache.time_next_update_utc),
-    );
+    // If not loaded, load cache. If not already saved to disk, update the cache (save for the first time)
+    if (!isLoaded()) {
+        if (!await isAvailable()) await updateCache();
+        console.log('Rates By Exchange Rate API: https://www.exchangerate-api.com');
+        ccCache = JSON.parse(await Deno.readTextFile(CC_CACHE_FILEPATH));
+    }
+    console.log('Next cache update due at: ' + new Date(ccCache.time_next_update_utc));
     // Return early if not out of date
     if (!isOutOfDate()) return;
     // otherwise update the cache and reload it
