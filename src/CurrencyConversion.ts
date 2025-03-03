@@ -128,14 +128,14 @@ export function convertCurrency(
     return amount;
 }
 
+const replaceRegex = /\s*[\d.,]+\s*/;
+const iso4217 = /[a-zA-Z]{3}/;
 /**
  * Extract the 3-letter ISO 4217 code that matches an input string.
  * @param str input string, such as "$1000" or "CAD 1000"
  * @returns a 3-letter ISO 4217 code, or a blank string if invalid
  */
 export function getCurrencyCodeFromString(str: string) {
-    const replaceRegex = /\s*[\d.,]+\s*/;
-    const iso4217 = /[a-zA-Z]{3}/;
     const currencySymbol = str.replace(replaceRegex, '') as keyof typeof CurrencySymbolMap;
 
     if (iso4217.test(currencySymbol)) {
