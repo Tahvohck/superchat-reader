@@ -34,3 +34,15 @@ Deno.test(TEST_PREFIX + 'ISO-4217 Abbrev extraction', () => {
     assertEquals(CCC.getCurrencyCodeFromString('¥ 10000')?.code, 'JPY');
     assertEquals(CCC.getCurrencyCodeFromString('10000 ¥')?.code, 'JPY');
 });
+
+if (import.meta.main) {
+    await CCC.loadCCCache();
+    const php = CCC.convertCurrency(1, code('USD'), code('PHP'));
+    const usdToArs = CCC.convertCurrency(1, code('USD'), code('ARS'));
+    const phpToYen = CCC.convertCurrency(100, code('PHP'), code('JPY'));
+    const yenToUsd = CCC.convertCurrency(100, code('JPY'));
+    console.log(`  1 USD is ${php} PHP`);
+    console.log(`  1 USD is ${usdToArs} ARS`);
+    console.log(`100 PHP is ${phpToYen} JPY`);
+    console.log(`100 JPY is ${yenToUsd} USD`);
+}

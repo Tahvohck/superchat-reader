@@ -9,18 +9,6 @@ const ccApi = 'https://open.er-api.com/v6/latest/USD';
 // TODO: This needs to be attributed per TOS <a href="https://www.exchangerate-api.com">Rates By Exchange Rate API</a>
 // The attribution is present in the console, but will need to be present in the GUI once present as well.
 
-if (import.meta.main) {
-    await loadCCCache();
-    const php = convertCurrency(1, code('USD'), code('PHP'));
-    const usdToArs = convertCurrency(1, code('USD'), code('ARS'));
-    const phpToYen = convertCurrency(100, code('PHP'), code('JPY'));
-    const yenToUsd = convertCurrency(100, code('JPY'));
-    console.log(`  1 USD is ${php} PHP`);
-    console.log(`  1 USD is ${usdToArs} ARS`);
-    console.log(`100 PHP is ${phpToYen} JPY`);
-    console.log(`100 JPY is ${yenToUsd} USD`);
-}
-
 /**
  * Checks if the currency conversion cache is loaded into memory.
  * @returns true if cache is loaded
