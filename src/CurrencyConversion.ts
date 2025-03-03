@@ -42,11 +42,13 @@ async function isAvailable(): Promise<boolean> {
     }
 }
 
+function throwIfNotLoaded() {
+    if (!isLoaded()) throw new Deno.errors.BadResource('Currency Cache was never loaded.');
+}
+
 /** Checks if the cache is out of date. */
 function isOutOfDate(): boolean {
-    if (!ccCache) {
-        throw new Deno.errors.BadResource('Currency Cache was never loaded.');
-    }
+    throwIfNotLoaded();
     return new Date() > new Date(ccCache.time_next_update_utc);
 }
 
@@ -56,6 +58,7 @@ function isOutOfDate(): boolean {
 async function updateCache() {
     await Deno.mkdir(path.dirname(CC_CACHE_FILEPATH), { recursive: true });
     const resp = await fetch(ccApi);
+    // deno-coverage-ignore-start These are errors on the API side and we don't care about them.
     if (resp.status == 429) {
         console.error('Too many requests to conversion API. Wait 20 minutes and try again.');
         throw new Deno.errors.ConnectionRefused('Too many requests to currency conversion API (how?)');
@@ -63,6 +66,7 @@ async function updateCache() {
     if (resp.status != 200) {
         throw new Deno.errors.NotFound('Could not connect to currency conversion API');
     }
+    // deno-coverage-ignore-stop
 
     using file = await Deno.open(CC_CACHE_FILEPATH, {
         create: true,
@@ -103,9 +107,7 @@ export function convertCurrency(
     from?: CurrencyCodeRecord,
     to: CurrencyCodeRecord = code('USD')!,
 ): number {
-    if (!ccCache) {
-        throw new Deno.errors.BadResource('Currency cache has not yet been initialized.');
-    }
+    throwIfNotLoaded();
     if (!from || !to) {
         throw new Deno.errors.InvalidData('Currency Code must be valid, not undefined');
     }
@@ -130,9 +132,7 @@ export function convertCurrency(
 
 /** Get the list of codes that are both valid ISO 4217 AND our conversion API knows about. */
 export function getValidCodes() {
-    if (!isLoaded()) {
-        throw new Deno.errors.BadResource('Currency cache has not yet been initialized.');
-    }
+    throwIfNotLoaded();
     const theirCodes = new Set(codes());
     const ourCodes = new Set(Object.keys(ccCache.rates));
     return theirCodes.intersection(ourCodes);
