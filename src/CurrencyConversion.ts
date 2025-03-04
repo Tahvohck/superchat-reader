@@ -29,7 +29,7 @@ const ccApi = 'https://open.er-api.com/v6/latest/USD';
  * @returns true if cache is loaded
  */
 export function isLoaded() {
-    return ccCache != null;
+    return !!ccCache;
 }
 
 /** Checks if the cache file is present and parseable. */
