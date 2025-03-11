@@ -16,7 +16,6 @@ class ConfigBuilderButton extends HTMLElement {
         // get the shadow root prepared with styles
         const shadow = this.attachShadow({mode: "closed"})
         const style = new CSSStyleSheet()
-        const unShadowedStyleSheet = document.getElementById("config-button")
         for (const rule of unShadowedStyleSheet.sheet.cssRules) {
             style.insertRule(rule.cssText)
         }
@@ -38,7 +37,6 @@ class ConfigBuilderCheckbox extends HTMLElement {
         // get the shadow root prepared with styles
         const shadow = this.attachShadow({mode: "closed"})
         const style = new CSSStyleSheet()
-        const unShadowedStyleSheet = document.getElementById("config-checkbox")
         for (const rule of unShadowedStyleSheet.sheet.cssRules) {
             style.insertRule(rule.cssText)
         }
@@ -63,6 +61,7 @@ class ConfigBuilderCheckbox extends HTMLElement {
         
         // Set up checkbox
         checkbox.type = "checkbox"
+        checkbox.classList += " checkbox"
         checkbox.id = uuid
         checkbox.checked = value == "true"
         checkbox.oninput = () => {
@@ -76,7 +75,10 @@ class ConfigBuilderCheckbox extends HTMLElement {
     }
 }
 
+let unShadowedStyleSheet
+
 document.addEventListener("DOMContentLoaded", () => {
+    unShadowedStyleSheet = document.getElementById("config-styles")
     customElements.define("config-button", ConfigBuilderButton)
     customElements.define("config-checkbox", ConfigBuilderCheckbox)
 })

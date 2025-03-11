@@ -1,4 +1,21 @@
-:host input { 
+config-button, config-checkbox, config-slider, config-textbox, config-numberbox {
+    display: flex;
+    justify-content: space-between;
+    margin: 2%;
+    width: 96%
+}
+
+/* Custom buttons */
+:host button {
+    height: 3em;
+    width: 90%;
+    margin: 0.5em;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+/* Custom checkboxes */
+:host .checkbox { 
     appearance: none;
     position : relative ;
     font-size: inherit;
@@ -11,15 +28,15 @@
     margin: auto;
 }
 
-:host input:checked {
+:host .checkbox:checked {
     background: green;
 }
 
-:host input {
+:host .checkbox {
     background: red;
 }
 
-:host input::before {
+:host .checkbox::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -34,7 +51,7 @@
     background-color: black;
 }
 
-:host input:checked:before {
+:host .checkbox:checked:before {
     transform: translate(100%, -50%);
 }
 
@@ -42,9 +59,9 @@
     align-self: flex-start;
 }
 
-config-checkbox {
-    display: flex;
-    justify-content: space-between;
-    margin: 2%;
-    width: 96%
+/* Custom sliders */
+:host .slider + label {
+    width: 5em;
+    text-align: right;
+    font-family: monospace;
 }
