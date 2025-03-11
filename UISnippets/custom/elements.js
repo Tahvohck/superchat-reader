@@ -1,3 +1,11 @@
+let unShadowedStyleSheet
+document.addEventListener("DOMContentLoaded", () => {
+    unShadowedStyleSheet = document.getElementById("config-styles")
+    customElements.define("config-button", ConfigBuilderButton)
+    customElements.define("config-checkbox", ConfigBuilderCheckbox)
+    customElements.define("config-slider", ConfigBuilderSlider)
+})
+
 /**
     * @param { HTMLElement } element
     * @param { string[] } attributes
@@ -70,10 +78,4 @@ class ConfigBuilderCheckbox extends HTMLElement {
     }
 }
 
-let unShadowedStyleSheet
 
-document.addEventListener("DOMContentLoaded", () => {
-    unShadowedStyleSheet = document.getElementById("config-styles")
-    customElements.define("config-button", ConfigBuilderButton)
-    customElements.define("config-checkbox", ConfigBuilderCheckbox)
-})
