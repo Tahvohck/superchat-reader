@@ -60,7 +60,11 @@ config-button, config-checkbox, config-slider, config-textbox, config-numberbox 
 }
 
 /* Custom sliders */
-:host .slider + label {
+:host .slider {
+    width: 50%;
+}
+
+:host .slider-display {
     width: 5em;
     text-align: right;
     font-family: monospace;
