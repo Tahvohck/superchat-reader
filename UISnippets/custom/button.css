@@ -1,0 +1,16 @@
+:host button {
+    height: 3em;
+    width: 90%;
+    margin: 0.5em;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+:host button.active {
+    background-color: lightgreen;
+}
+
+config-button {
+    display: block;
+    /*width: 100%*/
+}
