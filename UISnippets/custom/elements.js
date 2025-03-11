@@ -50,14 +50,10 @@ class ConfigBuilderCheckbox extends HTMLElement {
         }
         const label = document.createElement("label")
         const checkbox = document.createElement("input")
-        const toggleSwitch = document.createElement("label")
 
         // Set up label
         label.setAttribute("for", uuid)
         label.innerText = text
-
-        // Set up switch
-        toggleSwitch.setAttribute("for", uuid)
         
         // Set up checkbox
         checkbox.type = "checkbox"
@@ -71,7 +67,6 @@ class ConfigBuilderCheckbox extends HTMLElement {
         // Add child nodes
         shadow.appendChild(label)
         shadow.appendChild(checkbox)
-        shadow.appendChild(toggleSwitch)
     }
 }
 
