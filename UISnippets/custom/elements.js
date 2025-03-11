@@ -33,6 +33,50 @@ class ConfigBuilderButton extends HTMLElement {
     }
 }
 
+class ConfigBuilderCheckbox extends HTMLElement {
+    connectedCallback() {
+        // get the shadow root prepared with styles
+        const shadow = this.attachShadow({mode: "closed"})
+        const style = new CSSStyleSheet()
+        const unShadowedStyleSheet = document.getElementById("config-checkbox")
+        for (const rule of unShadowedStyleSheet.sheet.cssRules) {
+            style.insertRule(rule.cssText)
+        }
+        shadow.adoptedStyleSheets = [style]
+
+        // Now set up the custom element
+        const {uuid, value} = getMultipleAttributes(this, "uuid", "value")
+        const text = this.getAttribute("label")
+        if (!uuid) {
+            throw new Error("Custom checkbox must have a UUID")
+        }
+        const label = document.createElement("label")
+        const checkbox = document.createElement("input")
+        const toggleSwitch = document.createElement("label")
+
+        // Set up label
+        label.setAttribute("for", uuid)
+        label.innerText = text
+
+        // Set up switch
+        toggleSwitch.setAttribute("for", uuid)
+        
+        // Set up checkbox
+        checkbox.type = "checkbox"
+        checkbox.id = uuid
+        checkbox.checked = value == "true"
+        checkbox.oninput = () => {
+            globalThis[`checked_${uuid}`](checkbox.checked)
+        }
+
+        // Add child nodes
+        shadow.appendChild(label)
+        shadow.appendChild(checkbox)
+        shadow.appendChild(toggleSwitch)
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     customElements.define("config-button", ConfigBuilderButton)
+    customElements.define("config-checkbox", ConfigBuilderCheckbox)
 })

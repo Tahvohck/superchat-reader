@@ -1,0 +1,50 @@
+:host input { 
+    appearance: none;
+    position : relative ;
+    font-size: inherit;
+    width : 2em;
+    height : 1em;
+    box-sizing: content-box;
+    border: 0.1em solid black;
+    border-radius: 1em;
+    vertical-align: text-bottom;
+    margin: auto;
+}
+
+:host input:checked {
+    background: green;
+}
+
+:host input {
+    background: red;
+}
+
+:host input::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(0, -50%);
+    box-sizing: border-box;
+    width: .8em;
+    height: .8em;
+    margin: 0 10%;
+    border: 0.1em solid black;
+    border-radius: 50%;
+    background-color: black;
+}
+
+:host input:checked:before {
+    transform: translate(100%, -50%);
+}
+
+:host label {
+    align-self: flex-start;
+}
+
+config-checkbox {
+    display: flex;
+    justify-content: space-between;
+    margin: 2%;
+    width: 96%
+}
