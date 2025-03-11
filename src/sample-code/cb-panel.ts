@@ -46,7 +46,7 @@ function setUpCB() {
         })
         .addCheckbox('check: Starts checked', { value: true })
         .addCheckbox('check: Starts unchecked', {})
-        .addSlider('slider', {
+        .addSlider('slider (2, 20, 6, 2)', {
             range: [2, 20],
             value: 6,
             step: 2,
