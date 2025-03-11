@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
     unShadowedStyleSheet = document.getElementById("config-styles")
     customElements.define("config-button", ConfigBuilderButton)
     customElements.define("config-checkbox", ConfigBuilderCheckbox)
-    customElements.define("config-slider", ConfigBuilderSlider)
 })
 
 /**
@@ -35,7 +34,7 @@ class ConfigBuilderButton extends HTMLElement {
 
         button.innerText = label
         button.setAttribute("id", uuid)
-        button.onclick = globalThis[uuid]
+        button.addEventListener('click', globalThis[uuid])
         shadow.appendChild(button)
     }
 }
@@ -68,9 +67,9 @@ class ConfigBuilderCheckbox extends HTMLElement {
         checkbox.classList += " checkbox"
         checkbox.id = uuid
         checkbox.checked = value == "true"
-        checkbox.oninput = () => {
+        checkbox.addEventListener('input', () => {
             globalThis[`checked_${uuid}`](checkbox.checked)
-        }
+        })
 
         // Add child nodes
         shadow.appendChild(label)
