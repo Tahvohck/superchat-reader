@@ -1,8 +1,7 @@
 config-button, config-checkbox, config-slider, config-textbox, config-numberbox {
     display: flex;
     justify-content: space-between;
-    margin: 2%;
-    width: 96%
+    width: 100%
 }
 
 /* Custom buttons */
@@ -20,12 +19,14 @@ config-button, config-checkbox, config-slider, config-textbox, config-numberbox 
     position : relative ;
     font-size: inherit;
     width : 2em;
+    max-width: 2em;
     height : 1em;
     box-sizing: content-box;
     border: 0.1em solid black;
     border-radius: 1em;
     vertical-align: text-bottom;
     margin: auto;
+    flex-grow: 1;
 }
 
 :host .checkbox:checked {
@@ -51,12 +52,12 @@ config-button, config-checkbox, config-slider, config-textbox, config-numberbox 
     background-color: black;
 }
 
-:host .checkbox:checked:before {
-    transform: translate(100%, -50%);
+:host :has(+ .checkbox) {
+    flex-grow: 9;
 }
 
-:host label {
-    align-self: flex-start;
+:host .checkbox:checked:before {
+    transform: translate(100%, -50%);
 }
 
 /* Custom sliders */
