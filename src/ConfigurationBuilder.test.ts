@@ -61,7 +61,7 @@ Deno.test({
                 assertEquals(elemSlider.getAttribute('min'), String(min));
                 assertEquals(elemSlider.getAttribute('max'), String(max));
                 assertEquals(elemSlider.getAttribute('step'), String(step));
-                assertEquals(elemSlider.getAttribute('startValue'), String(value));
+                assertEquals(elemSlider.getAttribute('value'), String(value));
             },
         });
 
