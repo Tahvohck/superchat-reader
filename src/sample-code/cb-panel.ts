@@ -7,6 +7,9 @@ const win = new WebUI();
 const fh = new FileHandler();
 const cb = new ConfigurationBuilder();
 
+// TODO: cherry-pick 0b9fcacdbc673e528ada35eaff2eaf11c2b9701a probably at some point but don't take it wholesame.
+// For one, don't pass in an entire provider into the CB generation, just a name string is enough.
+
 if (import.meta.main) {
     setUpFH();
     setUpCB();
