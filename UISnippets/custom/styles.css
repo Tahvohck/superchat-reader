@@ -7,10 +7,7 @@ config-button, config-checkbox, config-slider, config-textbox, config-numberbox 
 /* Custom buttons */
 :host button {
     height: 3em;
-    width: 90%;
-    margin: 0.5em;
-    margin-left: 5%;
-    margin-right: 5%;
+    width: 100%;
 }
 
 /* Custom checkboxes */
@@ -61,12 +58,22 @@ config-button, config-checkbox, config-slider, config-textbox, config-numberbox 
 }
 
 /* Custom sliders */
-:host .slider {
-    width: 50%;
+:host:has(.slider) {
+    flex-wrap: wrap;
+}
+
+:host .slider-label {
+    flex-grow: 4;
 }
 
 :host .slider-display {
-    width: 5em;
+    flex-grow: 1;
+    min-width: 3em;
     text-align: right;
     font-family: monospace;
+}
+
+:host .slider {
+    min-width: 100%;
+    height: 1 em;
 }
