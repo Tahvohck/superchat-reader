@@ -1,6 +1,7 @@
 import * as path from '@std/path';
 import { crypto } from '@std/crypto';
 import { expandGlob } from '@std/fs';
+import { encodeBase64 } from '@std/encoding';
 
 export class LocallyCachedImage {
     /** Local file name. Most likely hash of the file contents, SHA-1 */
@@ -87,7 +88,6 @@ export class LocallyCachedImage {
             throw new Error('File not hydrated');
         }
         const content = await Deno.readFile(this.path());
-        const decoder = new TextDecoder('utf-8');
-        return `data:${this.mimetype};base64,${btoa(decoder.decode(content))}`;
+        return `data:${this.mimetype};base64,${encodeBase64(content)}`;
     }
 }
