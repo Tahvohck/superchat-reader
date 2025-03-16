@@ -4,8 +4,29 @@ import { expandGlob } from '@std/fs';
 
 export class LocallyCachedImage {
     /** Local file name. Most likely hash of the file contents, SHA-1 */
-    localFileName = 'DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF.png';
+    fileName = 'ADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF.png';
+    fileBin = 'DE';
+    digest = '';
+    mimetype = '';
     static readonly cacheLocation = path.join(Deno.cwd(), 'filecache');
+    /** Internal use only: number of digits to use when binning the hashes. */
+    private static readonly binsize = 1;
+
+    constructor(hash: string) {
+        this.digest = hash;
+        this.fileBin = hash.slice(0, LocallyCachedImage.binsize);
+        this.fileName = hash.slice(LocallyCachedImage.binsize);
+    }
+
+    path() {
+        const basepath = path.join(LocallyCachedImage.cacheLocation, this.fileBin, this.fileName);
+        if (this.mimetype == '') {
+            return basepath + '*';
+        } else {
+            const [_, subtype] = this.mimetype.split('/');
+            return `${basepath}.${subtype}`;
+        }
+    }
 
     /** Save a remote file to the local disk and return the local cache information */
     static async saveNew(img: Response): Promise<LocallyCachedImage> {
@@ -13,13 +34,11 @@ export class LocallyCachedImage {
             throw new Error('Server returned error: ' + img.status);
         }
 
-        const localcache = new LocallyCachedImage();
         const [type, subtype] = img.headers.get('content-type')!.split('/');
 
         if (type != 'image') {
             throw new Deno.errors.InvalidData('File is not an image! Refusing to download');
         }
-        await Deno.mkdir(this.cacheLocation, { recursive: true });
 
         const [hashStream, saveStream] = img.body!.tee();
 
@@ -29,37 +48,33 @@ export class LocallyCachedImage {
             .join('')
             .toUpperCase();
 
-        const cachefileName = path.join(this.cacheLocation, `${digestStr}.${subtype}`);
-        localcache.localFileName = cachefileName;
-
         let tempfile;
         try {
-            tempfile = await Deno.open(cachefileName, {
+            const lci = new LocallyCachedImage(digestStr);
+            // Recursively create the cache bin (this will also create the cache folder if needed)
+            await Deno.mkdir(path.dirname(lci.path()), { recursive: true });
+            lci.mimetype = `${type}/${subtype}`;
+            tempfile = await Deno.open(lci.path(), {
                 write: true,
                 read: true,
-                create: true,
                 createNew: true,
             });
+            // previous statement will throw if file already exists
+            await saveStream.pipeTo(tempfile.writable);
         } catch {
             // File already exists, don't write to it.
-            return LocallyCachedImage.hydrate(digestStr);
         }
-
-        await saveStream.pipeTo(tempfile.writable);
-
-        localcache.localFileName = cachefileName;
-        //throw new Error("Not yet implented");
-        return localcache;
+        return LocallyCachedImage.hydrate(digestStr);
     }
 
     static async hydrate(hash: string): Promise<LocallyCachedImage> {
-        const cachedImage = new LocallyCachedImage();
-        const cacheFileGlob = path.join(this.cacheLocation, hash) + '*';
-        const matches = await Array.fromAsync(expandGlob(cacheFileGlob));
+        const cachedImage = new LocallyCachedImage(hash);
+        const matches = await Array.fromAsync(expandGlob(cachedImage.path()));
         if (matches.length == 0) {
             throw new Deno.errors.NotFound('Could not rehydrate from local cache ' + hash);
         }
-        cachedImage.localFileName = matches[0].path;
+        const [_, ext] = matches[0].name.split('.');
+        cachedImage.mimetype = `image/${ext}`;
 
         return cachedImage;
     }
@@ -68,9 +83,12 @@ export class LocallyCachedImage {
      * @returns the contents of the file as a Base64 `data:` URI.
      */
     public async asBase64Uri(): Promise<string> {
-        const content = await Deno.readFile(this.localFileName);
+        if (this.mimetype == '') {
+            throw new Error('File not hydrated');
+        }
+        const content = await Deno.readFile(this.path());
         const decoder = new TextDecoder('utf-8');
-        return `data:image/${this.localFileName.split('.').at(-1)};base64,${btoa(decoder.decode(content))}`;
+        return `data:${this.mimetype};base64,${btoa(decoder.decode(content))}`;
     }
 }
 
@@ -90,8 +108,8 @@ if (import.meta.main) {
     for (const url of saveNewTests) {
         try {
             const lci = await LocallyCachedImage.saveNew(await fetch(url));
-            hydrateTests.push(path.basename(lci.localFileName));
-            console.log(lci);
+            hydrateTests.push(path.basename(lci.digest));
+            console.log(path.relative(Deno.cwd(), lci.path()));
         } catch (e) {
             console.log((e as Error).message);
         }
@@ -100,8 +118,8 @@ if (import.meta.main) {
     for (const filename of hydrateTests) {
         try {
             const lci = await LocallyCachedImage.hydrate(filename);
-            console.log(lci);
-            await Deno.remove(lci.localFileName);
+            console.log(path.relative(Deno.cwd(), lci.path()));
+            await Deno.remove(lci.path());
         } catch (e) {
             console.log((e as Error).message);
         }
