@@ -1,5 +1,10 @@
-import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
+import {
+    DonationClass,
+    DonationMessage,
+    DonationProvider,
+    DonationProviderEvents,
+    ProviderFactory,
+} from '@app/DonationProvider.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { ScrapingClient } from 'youtube.js';
 import { ChatMessage, MessageType } from 'youtube.js/dist/scraping/ChatClient.js';
@@ -7,6 +12,7 @@ import { LocallyCachedImage } from '@app/ImageCache.ts';
 import { code } from 'currency-codes';
 import { getCurrencyCodeFromString } from '@app/CurrencyConversion.ts';
 import { DenoOrchestrator } from '@app/chat_providers/youtube/DenoOrchestrator.ts';
+import { AbortableEventEmitter } from '../../util.ts';
 
 const CLASS_LOOKUP = {
     4280191205: DonationClass.Blue,
@@ -18,49 +24,25 @@ const CLASS_LOOKUP = {
     4293271831: DonationClass.Red,
 } as Record<number, DonationClass>;
 
-export class YouTubeDonationProvider implements DonationProvider {
-    id = 'youtube';
-    name = 'YouTube';
-    version = '0.0.1';
-
+export class YouTubeDonationProvider extends AbortableEventEmitter<DonationProviderEvents> implements DonationProvider {
     private client!: ScrapingClient;
-    private config!: YouTubeConfig;
 
-    // youtube.js has no internal mechanism to stop a chat reader, so we use this variable
-    // to check when we should break out of the process loop.
-    private shouldStop = false;
-    private shouldStopPromise?: Promise<void>;
-    private shouldStopResolve?: () => void;
-
-    constructor() {
+    constructor(signal: AbortSignal, private readonly config: YouTubeConfig) {
+        super(signal);
     }
 
     async activate(): Promise<boolean> {
         try {
-            this.config = await SavedConfig.getOrCreate(YouTubeConfig);
             this.client = new ScrapingClient({
                 useOrchestrator: new DenoOrchestrator(),
             });
 
             await this.client.init();
 
-            this.shouldStop = false;
-
-            const { promise, resolve } = Promise.withResolvers<void>();
-            this.shouldStopPromise = promise;
-            this.shouldStopResolve = resolve;
-
             return true;
         } catch {
             return false;
         }
-    }
-
-    async deactivate(): Promise<boolean> {
-        this.shouldStop = true;
-        await this.client.destroy();
-        await this.shouldStopPromise;
-        return true;
     }
 
     async *process(): AsyncGenerator<DonationMessage> {
@@ -71,12 +53,19 @@ export class YouTubeDonationProvider implements DonationProvider {
         const chat = await this.client.chat(this.config.streamId!);
 
         for await (const message of chat.read()) {
-            if (this.shouldStop) {
-                this.shouldStopResolve!();
+            if (this.signal.aborted) {
                 return;
             }
             yield await this.toDonationMessage(message);
         }
+    }
+
+    public async start() {
+        for await (const message of this.process()) {
+            this.emit('message', message);
+        }
+
+        this.emit('finished');
     }
 
     private async toDonationMessage(message: ChatMessage): Promise<DonationMessage> {
@@ -129,8 +118,20 @@ export class YouTubeDonationProvider implements DonationProvider {
 
         return donationMessage as DonationMessage;
     }
+}
 
-    configure(cb: ConfigurationBuilder): void {}
+export class YouTubeFactory implements ProviderFactory {
+    public readonly id: string = 'youtube';
+    public readonly version: string = '0.0.1';
+    public readonly name: string = 'YouTube';
+
+    private config!: YouTubeConfig;
+
+    public async createProvider(signal: AbortSignal): Promise<YouTubeDonationProvider> {
+        const config = this.config = this.config ?? await SavedConfig.getOrCreate(YouTubeConfig);
+        const provider = new YouTubeDonationProvider(signal, config);
+        return provider;
+    }
 }
 
 export class YouTubeConfig extends SavedConfig {

@@ -1,3 +1,6 @@
+//@ts-types=npm:@node/events
+import EventEmitter from 'node:events';
+
 export const sleep = (ms: number): Promise<void> => {
     return new Promise((res) => setTimeout(res, ms));
 };
@@ -61,5 +64,11 @@ export class Combine<T> implements AsyncIterable<T> {
         const iterable = this.iterables.get(key);
         this.iterables.delete(key);
         return iterable;
+    }
+}
+
+export class AbortableEventEmitter<T extends Record<keyof T, unknown[]>> extends EventEmitter<T> {
+    constructor(protected readonly signal: AbortSignal) {
+        super();
     }
 }

@@ -1,20 +1,22 @@
+//@ts-types=npm:@types/node
 import { CurrencyCodeRecord } from 'currency-codes';
-import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
 
+export type DonationProviderEvents = {
+    message: [DonationMessage];
+    finished: [];
+};
+
 export interface DonationProvider {
+    on(event: 'message', callback: (message: DonationMessage) => void);
+    on(event: 'finished', callback: () => void);
+}
+
+export interface ProviderFactory<T extends DonationProvider = DonationProvider> {
     readonly id: string;
-    readonly name: string;
     readonly version: string;
-    /** Activate the provider. Return value indicates success. */
-    activate(): Promise<boolean>;
-    /** Deactivate the provider. Return value indicates success. */
-    deactivate(): Promise<boolean>;
-    /**
-     * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
-     */
-    process(): AsyncGenerator<DonationMessage>;
-    configure(cb: ConfigurationBuilder): void;
+    readonly name: string;
+    createProvider(signal: AbortSignal): T | Promise<T>;
 }
 
 export type MessageType = 'text' | 'image';

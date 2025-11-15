@@ -1,146 +1,65 @@
-import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
+import {
+    DonationClass,
+    DonationMessage,
+    DonationProvider,
+    DonationProviderEvents,
+    ProviderFactory,
+} from '@app/DonationProvider.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
-import { sleep } from '@app/util.ts';
+import { AbortableEventEmitter } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 
-export class DemoProvider implements DonationProvider {
-    readonly id = 'demo';
-    readonly name = 'Demo Provider';
-    readonly version = '1.0';
-
+export class DemoProvider extends AbortableEventEmitter<DonationProviderEvents> implements DonationProvider {
     messages: DonationMessage[] = [];
     active = false;
     immediateMessage = false;
+    interval: number;
+    constructor(signal: AbortSignal, private readonly config: DemoConfig) {
+        super(signal);
 
-    config!: DemoConfig;
-
-    async activate() {
-        this.config = await SavedConfig.getOrCreate(DemoConfig);
-        console.log(
-            `Username: ${this.config.demoUsername}\n` +
-                `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
-        );
-        this.active = true;
-        console.log('Demo provider activated');
-        return Promise.resolve(true);
-    }
-
-    deactivate() {
-        this.active = false;
-        console.log('Demo provider deactivated');
-        return Promise.resolve(true);
-    }
-
-    async *process() {
-        while (this.active) {
-            let sleptfor = 0;
-            // Keep looping until: immediate message requested OR
-            // constant stream is enabled and we've slept long enough
-            while (!this.immediateMessage && (!this.config.constantStream || sleptfor < this.config.delay)) {
-                await sleep(250);
-                sleptfor += 250;
-            }
-            if (!this.active) {
+        this.interval = setInterval(() => {
+            if (this.signal.aborted) {
+                clearInterval(this.interval);
                 return;
             }
-            this.immediateMessage = false;
-            const message: DonationMessage = {
-                author: this.config.demoUsername,
-                message: generateWords(
-                    this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords)),
-                ),
-                donationClass: DonationClass.Blue,
-                donationCurrency: code('USD')!, // USD currency exists, this will never be undefined
-                donationAmount: 0,
-                messageType: 'text',
-            };
-
-            // Generate a random amount and truncate it to the correct digit count
-            message.donationAmount = Math.random() * 100 *
-                10 ** message.donationCurrency.digits;
-            message.donationAmount = Math.floor(message.donationAmount);
-            message.donationAmount /= 10 ** message.donationCurrency.digits;
-
-            yield message;
-        }
+            this.emit('message', this.generateMessage());
+        }, this.config.delay);
     }
 
-    configure(cb: ConfigurationBuilder): void {
-        cb.addCheckbox(
-            'Enabled',
-            {
-                value: this.active,
-                callback: async (state) => {
-                    if (state && !this.active) {
-                        await this.activate();
-                    } else if (!state && this.active) {
-                        await this.deactivate();
-                    } else {
-                        console.warn(`Provider in weird state. check: ${state} state: ${this.active}`);
-                    }
-                },
-            },
-        ).addTextBox(
-            'Username',
-            {
-                value: this.config.demoUsername,
-                type: 'text',
-                callback: (newVal) => {
-                    this.config.demoUsername = newVal;
-                },
-            },
-        ).addTextBox(
-            'Minimum Words',
-            {
-                value: this.config.minWords,
-                type: 'number',
-                callback: (newVal) => {
-                    const newMin = Number(newVal);
-                    if (!Number.isNaN(newMin) && newMin < this.config.maxWords && newMin > 0) {
-                        this.config.minWords = newMin;
-                    }
-                },
-            },
-        ).addTextBox(
-            'Maximum Words',
-            {
-                value: this.config.maxWords,
-                type: 'number',
-                callback: (newVal) => {
-                    const newMax = Number(newVal);
-                    if (!Number.isNaN(newMax) && newMax > this.config.minWords && newMax < 100) {
-                        this.config.maxWords = newMax;
-                    }
-                },
-            },
-        ).addCheckbox(
-            'Constant messages',
-            {
-                value: this.config.constantStream,
-                callback: (state) => {
-                    this.config.constantStream = state;
-                },
-            },
-        ).addSlider(
-            'Message Delay (ms)',
-            {
-                range: [250, 10_000],
-                step: 250,
-                value: this.config.delay,
-                callback: (newVal) => {
-                    this.config.delay = newVal;
-                },
-            },
-        ).addButton(
-            'Send message',
-            {
-                callback: () => {
-                    this.immediateMessage = true;
-                },
-            },
-        );
+    generateMessage() {
+        this.immediateMessage = false;
+        const message: DonationMessage = {
+            author: this.config.demoUsername,
+            message: generateWords(
+                this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords)),
+            ),
+            donationClass: DonationClass.Blue,
+            donationCurrency: code('USD')!, // USD currency exists, this will never be undefined
+            donationAmount: 0,
+            messageType: 'text',
+        };
+
+        // Generate a random amount and truncate it to the correct digit count
+        message.donationAmount = Math.random() * 100 *
+            10 ** message.donationCurrency.digits;
+        message.donationAmount = Math.floor(message.donationAmount);
+        message.donationAmount /= 10 ** message.donationCurrency.digits;
+
+        return message;
+    }
+}
+
+export class DemoFactory implements ProviderFactory<DemoProvider> {
+    public readonly id = 'demo';
+    public readonly name = 'Demo Provider';
+    public readonly version = '1.0';
+
+    private config?: DemoConfig;
+
+    async createProvider(signal: AbortSignal): Promise<DemoProvider> {
+        const config = this.config ?? await SavedConfig.getOrCreate(DemoConfig);
+        return new DemoProvider(signal, config);
     }
 }
 
