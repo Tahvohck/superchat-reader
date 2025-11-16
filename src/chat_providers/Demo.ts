@@ -2,15 +2,16 @@ import {
     DonationClass,
     DonationMessage,
     DonationProvider,
-    DonationProviderEvents,
-    ProviderFactory,
+    DonationReader,
+    DonationReaderEventMap,
 } from '@app/DonationProvider.ts';
+import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { AbortableEventEmitter } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 
-export class DemoProvider extends AbortableEventEmitter<DonationProviderEvents> implements DonationProvider {
+export class DemoReader extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
     messages: DonationMessage[] = [];
     active = false;
     immediateMessage = false;
@@ -18,13 +19,17 @@ export class DemoProvider extends AbortableEventEmitter<DonationProviderEvents> 
     constructor(signal: AbortSignal, private readonly config: DemoConfig) {
         super(signal);
 
+        signal.addEventListener('abort', () => {
+            clearInterval(this.interval);
+        });
+
         this.interval = setInterval(() => {
-            if (this.signal.aborted) {
-                clearInterval(this.interval);
-                return;
-            }
             this.emit('message', this.generateMessage());
         }, this.config.delay);
+    }
+
+    public sendImmediate() {
+        this.emit('message', this.generateMessage());
     }
 
     generateMessage() {
@@ -50,16 +55,87 @@ export class DemoProvider extends AbortableEventEmitter<DonationProviderEvents> 
     }
 }
 
-export class DemoFactory implements ProviderFactory<DemoProvider> {
+export class DemoProvider implements DonationProvider<DemoReader> {
     public readonly id = 'demo';
     public readonly name = 'Demo Provider';
     public readonly version = '1.0';
 
-    private config?: DemoConfig;
+    private lastReader?: DemoReader;
 
-    async createProvider(signal: AbortSignal): Promise<DemoProvider> {
-        const config = this.config ?? await SavedConfig.getOrCreate(DemoConfig);
-        return new DemoProvider(signal, config);
+    private config!: DemoConfig;
+
+    createReader(signal: AbortSignal): DemoReader {
+        const reader = this.lastReader = new DemoReader(signal, this.config);
+        return reader;
+    }
+
+    async init(configBuilder: ConfigurationBuilder) {
+        this.config = await SavedConfig.getOrCreate(DemoConfig);
+
+        // This is not currently best practice as I see it.
+        // Ideally, with the provider rewrite, settings on readers should be static
+        // and instead config changes should just trigger construction of a brand new reader.
+        configBuilder.addTextBox(
+            'Username',
+            {
+                value: this.config.demoUsername,
+                type: 'text',
+                callback: (newVal) => {
+                    this.config.demoUsername = newVal;
+                },
+            },
+        ).addTextBox(
+            'Minimum Words',
+            {
+                value: this.config.minWords,
+                type: 'number',
+                callback: (newVal) => {
+                    const newMin = Number(newVal);
+                    if (!Number.isNaN(newMin) && newMin < this.config.maxWords && newMin > 0) {
+                        this.config.minWords = newMin;
+                    }
+                },
+            },
+        ).addTextBox(
+            'Maximum Words',
+            {
+                value: this.config.maxWords,
+                type: 'number',
+                callback: (newVal) => {
+                    const newMax = Number(newVal);
+                    if (!Number.isNaN(newMax) && newMax > this.config.minWords && newMax < 100) {
+                        this.config.maxWords = newMax;
+                    }
+                },
+            },
+        ).addCheckbox(
+            'Constant messages',
+            {
+                value: this.config.constantStream,
+                callback: (state) => {
+                    this.config.constantStream = state;
+                },
+            },
+        ).addSlider(
+            // FIXME: currently broken since moving to `setInterval` implementation.
+            // this should be easier to fix by just making this an invalidating option.
+            'Message Delay (ms)',
+            {
+                range: [250, 10_000],
+                step: 250,
+                value: this.config.delay,
+                callback: (newVal) => {
+                    this.config.delay = newVal;
+                },
+            },
+        ).addButton(
+            'Send message',
+            {
+                callback: () => {
+                    this.lastReader?.sendImmediate();
+                },
+            },
+        );
     }
 }
 

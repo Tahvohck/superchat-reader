@@ -2,8 +2,8 @@ import {
     DonationClass,
     DonationMessage,
     DonationProvider,
-    DonationProviderEvents,
-    ProviderFactory,
+    DonationReader,
+    DonationReaderEventMap,
 } from '@app/DonationProvider.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { ScrapingClient } from 'youtube.js';
@@ -24,7 +24,7 @@ const CLASS_LOOKUP = {
     4293271831: DonationClass.Red,
 } as Record<number, DonationClass>;
 
-export class YouTubeDonationProvider extends AbortableEventEmitter<DonationProviderEvents> implements DonationProvider {
+export class YouTubeDonationProvider extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
     private client!: ScrapingClient;
 
     constructor(signal: AbortSignal, private readonly config: YouTubeConfig) {
@@ -120,14 +120,14 @@ export class YouTubeDonationProvider extends AbortableEventEmitter<DonationProvi
     }
 }
 
-export class YouTubeFactory implements ProviderFactory {
+export class YouTubeFactory implements DonationProvider {
     public readonly id: string = 'youtube';
     public readonly version: string = '0.0.1';
     public readonly name: string = 'YouTube';
 
     private config!: YouTubeConfig;
 
-    public async createProvider(signal: AbortSignal): Promise<YouTubeDonationProvider> {
+    public async createReader(signal: AbortSignal): Promise<YouTubeDonationProvider> {
         const config = this.config = this.config ?? await SavedConfig.getOrCreate(YouTubeConfig);
         const provider = new YouTubeDonationProvider(signal, config);
         return provider;
