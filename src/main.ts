@@ -1,5 +1,5 @@
 import { DemoProvider } from '@app/chat_providers/Demo.ts';
-import { YouTubeFactory } from '@app/chat_providers/youtube/YouTubeProvider.ts';
+import { YouTubeProvider } from '@app/chat_providers/youtube/YouTubeProvider.ts';
 import { ProviderManager } from '@app/ProviderManager.ts';
 import { loadCCCache } from '@app/CurrencyConversion.ts';
 import { getProgramConfig } from '@app/MainConfig.ts';
@@ -13,9 +13,9 @@ const config = await getProgramConfig();
 await manager.init();
 
 if (config.debug) {
-    manager.register(new DemoProvider());
+    await manager.register(new DemoProvider());
 } else {
-    manager.register(new YouTubeFactory());
+    await manager.register(new YouTubeProvider());
 }
 
 const messageCap = 10;

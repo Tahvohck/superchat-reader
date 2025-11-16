@@ -13,6 +13,7 @@ import { code } from 'currency-codes';
 import { getCurrencyCodeFromString } from '@app/CurrencyConversion.ts';
 import { DenoOrchestrator } from '@app/chat_providers/youtube/DenoOrchestrator.ts';
 import { AbortableEventEmitter } from '../../util.ts';
+import { ConfigurationBuilder } from '../../ConfigurationBuilder.ts';
 
 const CLASS_LOOKUP = {
     4280191205: DonationClass.Blue,
@@ -24,25 +25,12 @@ const CLASS_LOOKUP = {
     4293271831: DonationClass.Red,
 } as Record<number, DonationClass>;
 
-export class YouTubeDonationProvider extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
-    private client!: ScrapingClient;
+export class YouTubeDonationReader extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
+    private readonly messagePromise: Promise<void>;
 
-    constructor(signal: AbortSignal, private readonly config: YouTubeConfig) {
+    constructor(signal: AbortSignal, private readonly client: ScrapingClient, private readonly config: YouTubeConfig) {
         super(signal);
-    }
-
-    async activate(): Promise<boolean> {
-        try {
-            this.client = new ScrapingClient({
-                useOrchestrator: new DenoOrchestrator(),
-            });
-
-            await this.client.init();
-
-            return true;
-        } catch {
-            return false;
-        }
+        this.messagePromise = this.start();
     }
 
     async *process(): AsyncGenerator<DonationMessage> {
@@ -120,17 +108,31 @@ export class YouTubeDonationProvider extends AbortableEventEmitter<DonationReade
     }
 }
 
-export class YouTubeFactory implements DonationProvider {
+export class YouTubeProvider implements DonationProvider {
     public readonly id: string = 'youtube';
     public readonly version: string = '0.0.1';
     public readonly name: string = 'YouTube';
 
     private config!: YouTubeConfig;
+    private client!: ScrapingClient;
 
-    public async createReader(signal: AbortSignal): Promise<YouTubeDonationProvider> {
-        const config = this.config = this.config ?? await SavedConfig.getOrCreate(YouTubeConfig);
-        const provider = new YouTubeDonationProvider(signal, config);
-        return provider;
+    public createReader(signal: AbortSignal): YouTubeDonationReader {
+        return new YouTubeDonationReader(signal, this.client, this.config);
+    }
+
+    public async init(configurator: ConfigurationBuilder) {
+        const config = this.config = await SavedConfig.getOrCreate(YouTubeConfig);
+        this.client = new ScrapingClient({ useOrchestrator: new DenoOrchestrator() });
+
+        await this.client.init();
+
+        configurator.addTextBox('Stream ID', {
+            type: 'text',
+            value: config.streamId,
+            callback: (newId) => {
+                config.streamId = newId;
+            },
+        });
     }
 }
 
