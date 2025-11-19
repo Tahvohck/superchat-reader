@@ -1,39 +1,20 @@
-import {
-    DonationClass,
-    DonationMessage,
-    DonationProvider,
-    DonationReader,
-    DonationReaderEventMap,
-} from '@app/DonationProvider.ts';
+import { DonationClass, DonationEventEmitter, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
-import { AbortableEventEmitter } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 
-export class DemoReader extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
-    messages: DonationMessage[] = [];
-    active = false;
-    immediateMessage = false;
-    interval: number;
-    constructor(signal: AbortSignal, private readonly config: DemoConfig) {
-        super(signal);
+export class DemoProvider implements DonationProvider {
+    public readonly id = 'demo';
+    public readonly name = 'Demo Provider';
+    public readonly version = '1.0';
 
-        signal.addEventListener('abort', () => {
-            clearInterval(this.interval);
-        });
+    private config!: DemoConfig;
+    private emitter!: DonationEventEmitter;
 
-        this.interval = setInterval(() => {
-            this.emit('message', this.generateMessage());
-        }, this.config.delay);
-    }
+    private interval: number | null = null;
 
-    public sendImmediate() {
-        this.emit('message', this.generateMessage());
-    }
-
-    generateMessage() {
-        this.immediateMessage = false;
+    private generateMessage() {
         const message: DonationMessage = {
             author: this.config.demoUsername,
             message: generateWords(
@@ -53,24 +34,16 @@ export class DemoReader extends AbortableEventEmitter<DonationReaderEventMap> im
 
         return message;
     }
-}
 
-export class DemoProvider implements DonationProvider<DemoReader> {
-    public readonly id = 'demo';
-    public readonly name = 'Demo Provider';
-    public readonly version = '1.0';
-
-    private lastReader?: DemoReader;
-
-    private config!: DemoConfig;
-
-    createReader(signal: AbortSignal): DemoReader {
-        const reader = this.lastReader = new DemoReader(signal, this.config);
-        return reader;
+    private startMessages() {
+        this.interval = setInterval(() => {
+            this.emitter.emit('message', this.generateMessage());
+        }, this.config.delay);
     }
 
-    async init(configBuilder: ConfigurationBuilder) {
+    async init(configBuilder: ConfigurationBuilder, emitter: DonationEventEmitter) {
         this.config = await SavedConfig.getOrCreate(DemoConfig);
+        this.emitter = emitter;
 
         // This is not currently best practice as I see it.
         // Ideally, with the provider rewrite, settings on readers should be static
@@ -117,8 +90,6 @@ export class DemoProvider implements DonationProvider<DemoReader> {
                 },
             },
         ).addSlider(
-            // FIXME: currently broken since moving to `setInterval` implementation.
-            // this should be easier to fix by just making this an invalidating option.
             'Message Delay (ms)',
             {
                 range: [250, 10_000],
@@ -126,16 +97,29 @@ export class DemoProvider implements DonationProvider<DemoReader> {
                 value: this.config.delay,
                 callback: (newVal) => {
                     this.config.delay = newVal;
+                    clearInterval(this.interval ?? undefined);
+                    this.startMessages();
                 },
             },
         ).addButton(
             'Send message',
             {
                 callback: () => {
-                    this.lastReader?.sendImmediate();
+                    this.emitter.emit('message', this.generateMessage());
                 },
             },
         );
+    }
+
+    start(): void | Promise<void> {
+        this.startMessages();
+    }
+    stop(): void | Promise<void> {
+        clearInterval(this.interval ?? undefined);
+    }
+
+    destroy?(): void | Promise<void> {
+        clearInterval(this.interval ?? undefined);
     }
 }
 

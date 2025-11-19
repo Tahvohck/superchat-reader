@@ -1,5 +1,12 @@
-import { DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
-import { getProgramConfig } from '@app/MainConfig.ts';
+import {
+    DonationEventEmitter,
+    DonationEventListener,
+    DonationEventMap,
+    DonationMessage,
+    DonationProvider,
+    splitEmitter,
+} from '@app/DonationProvider.ts';
+import { getProgramConfig, ProgramConfig } from '@app/MainConfig.ts';
 import { EventEmitter } from 'node:events';
 import { ConfigurationBuilder } from './ConfigurationBuilder.ts';
 
@@ -13,15 +20,31 @@ export class ProviderNotFound extends Error {
 }
 
 /**
+ * Indicates that a requested provider is not enabled.
+ */
+export class ProviderNotEnabled extends Error {
+    constructor(id: string) {
+        super(`Provider with ID ${id} is not enabled.`);
+    }
+}
+
+/**
  * Central point for managing all chat providers.
  */
-export class ProviderManager {
-    private readonly providers = new Map<string, DonationProvider>();
-    private readonly configurations = new Map<string, ConfigurationBuilder>();
-    private config!: Awaited<ReturnType<typeof getProgramConfig>>;
+// TODO: figure out semantics for enabling/disabling providers (at runtime).
+export class ProviderManager extends EventEmitter<{ message: [DonationMessage] }> {
+    private readonly providers = new Map<string, ProviderState>();
+    private config!: ProgramConfig;
 
     public async init() {
         this.config = await getProgramConfig();
+    }
+
+    private getProvider(providerId: string): ProviderState {
+        if (!this.providers.has(providerId)) {
+            throw new ProviderNotFound(providerId);
+        }
+        return this.providers.get(providerId)!;
     }
 
     /**
@@ -48,10 +71,6 @@ export class ProviderManager {
         return this.config.enabledProviders[providerId];
     }
 
-    public getStream(): ProviderMessageStream {
-        return new ProviderMessageStream(this.getEnabledProviders());
-    }
-
     public async register(
         provider: DonationProvider,
     ) {
@@ -63,70 +82,113 @@ export class ProviderManager {
         if (typeof this.config.enabledProviders[provider.id] !== 'boolean') {
             this.config.enabledProviders[provider.id] = true;
         }
-        this.providers.set(provider.id, provider);
 
-        if (typeof provider.init === 'function') {
-            const config = new ConfigurationBuilder();
-            await provider.init(config);
-            this.configurations.set(provider.id, config);
-        }
+        const data = new ProviderState(this, provider);
+        await data.init();
+        this.providers.set(provider.id, data);
     }
 
     private getEnabledProviders() {
         const providers = [];
         for (const provider of this.providers.values()) {
-            if (this.config.enabledProviders[provider.id]) {
+            if (this.config.enabledProviders[provider.provider.id]) {
                 providers.push(provider);
             }
         }
         return providers;
     }
 
+    /**
+     * Start a provider.
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
+     */
+    public async start(providerId: string): Promise<void> {
+        const provider = this.getProvider(providerId);
+        await provider.start();
+    }
+
+    public async startEnabled(): Promise<void> {
+        for (const provider of this.getEnabledProviders()) {
+            await provider.start();
+        }
+    }
+
+    /**
+     * Stop a provider.
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
+     */
+    public async stop(providerId: string): Promise<void> {
+        const provider = this.getProvider(providerId);
+        await provider.stop();
+    }
+
+    public async stopAll(): Promise<void> {
+        for (const provider of this.providers.values().filter((p) => p.started)) {
+            await provider.stop();
+        }
+    }
+
     public getConfiguration(provider: string): ConfigurationBuilder | undefined {
-        return this.configurations.get(provider);
+        return this.providers.get(provider)?.configuration;
+    }
+}
+
+export class AlreadyStartedError extends Error {
+    constructor(providerId: string) {
+        super(`Provider with ID ${providerId} has already been started.`);
+    }
+}
+
+export class NotStartedError extends Error {
+    constructor(providerId: string) {
+        super(`Provider with ID ${providerId} has not been started.`);
     }
 }
 
 /**
- * Represents a stream of provider messages.
- *
- * @example
- * const stream = providerManager.getStream();
- * const max = 10;
- * let current = 0;
- * stream.on("message", message => {
- *     console.log(messageToString(message));
- *     if (++current > max) {
- *         stream.abort();
- *     }
- * });
+ * Holds state for a registered provider. This automatically manages event forwarding and start/stop state.
  */
-export class ProviderMessageStream extends EventEmitter<{ message: [DonationMessage]; aborted: [] }> {
-    private readonly controller = new AbortController();
+export class ProviderState {
+    private _started: boolean = false;
+    public readonly configuration: ConfigurationBuilder = new ConfigurationBuilder();
+    private readonly listener: DonationEventListener;
+    private readonly emitter: DonationEventEmitter;
+    private readonly callback = (message: DonationMessage) => {
+        this.manager.emit('message', message);
+    };
 
-    constructor(private readonly factories: DonationProvider[]) {
-        super();
-
-        this.controller.signal.addEventListener('abort', () => {
-            this.emit('aborted');
-        });
+    public get started() {
+        return this._started;
     }
 
-    /**
-     * Start the message stream. Message events can already start being emitted before the returned promise resolves, so it's
-     * recommended you add your listeners *before* calling this method.
-     */
+    constructor(private readonly manager: ProviderManager, public readonly provider: DonationProvider) {
+        const [emitter, listener] = splitEmitter(new EventEmitter<DonationEventMap>());
+        this.emitter = emitter;
+        this.listener = listener;
+    }
+
+    public async init() {
+        return await this.provider.init(this.configuration, this.emitter);
+    }
+
     public async start() {
-        await Promise.all(
-            this.factories.map(async (factory) => {
-                const reader = await factory.createReader(this.controller.signal);
-                reader.on('message', (message) => this.emit('message', message));
-            }),
-        );
+        if (this._started) {
+            throw new AlreadyStartedError(this.provider.id);
+        }
+
+        this.listener.on('message', this.callback);
+
+        await this.provider.start();
+        this._started = true;
     }
 
-    public abort(reason?: string) {
-        this.controller.abort(reason);
-        this.removeAllListeners('message');
+    public async stop() {
+        if (!this._started) {
+            throw new NotStartedError(this.provider.id);
+        }
+
+        await this.provider.stop();
+        this.listener.off('message', this.callback);
+        this._started = false;
     }
 }

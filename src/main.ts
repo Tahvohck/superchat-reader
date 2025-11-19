@@ -24,19 +24,13 @@ console.log(`Printing ${messageCap} total debug messages.`);
 
 console.log('---------------- DEBUG MESSAGES ----------------');
 
-const stream = manager.getStream();
-
 let i = 0;
-stream.on('message', (message) => {
+manager.on('message', async (message) => {
     console.log(donationMessageToString(message));
-
     if (++i >= messageCap) {
-        stream.abort();
+        await manager.stopAll();
+        console.log('----------------- END OF DEBUG -----------------');
     }
 });
 
-stream.on('aborted', () => {
-    console.log('\nDone.');
-});
-
-await stream.start();
+await manager.startEnabled();

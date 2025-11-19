@@ -1,9 +1,9 @@
 import {
     DonationClass,
+    DonationEventEmitter,
+    DonationEventMap,
     DonationMessage,
     DonationProvider,
-    DonationReader,
-    DonationReaderEventMap,
 } from '@app/DonationProvider.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
 import { ScrapingClient } from 'youtube.js';
@@ -25,9 +25,8 @@ const CLASS_LOOKUP = {
     4293271831: DonationClass.Red,
 } as Record<number, DonationClass>;
 
-export class YouTubeDonationReader extends AbortableEventEmitter<DonationReaderEventMap> implements DonationReader {
+export class YouTubeDonationReader extends AbortableEventEmitter<DonationEventMap> {
     private readonly messagePromise: Promise<void>;
-
     constructor(signal: AbortSignal, private readonly client: ScrapingClient, private readonly config: YouTubeConfig) {
         super(signal);
         this.messagePromise = this.start();
@@ -115,12 +114,13 @@ export class YouTubeProvider implements DonationProvider {
 
     private config!: YouTubeConfig;
     private client!: ScrapingClient;
+    private emitter!: DonationEventEmitter;
 
-    public createReader(signal: AbortSignal): YouTubeDonationReader {
-        return new YouTubeDonationReader(signal, this.client, this.config);
-    }
+    private readonly controller = new AbortController();
 
-    public async init(configurator: ConfigurationBuilder) {
+    private currentReader: YouTubeDonationReader | null = null;
+
+    public async init(configurator: ConfigurationBuilder, emitter: DonationEventEmitter): Promise<void> {
         const config = this.config = await SavedConfig.getOrCreate(YouTubeConfig);
         this.client = new ScrapingClient({ useOrchestrator: new DenoOrchestrator() });
 
@@ -133,6 +133,28 @@ export class YouTubeProvider implements DonationProvider {
                 config.streamId = newId;
             },
         });
+
+        this.emitter = emitter;
+    }
+
+    public start(): void {
+        this.currentReader = new YouTubeDonationReader(this.controller.signal, this.client, this.config);
+        this.currentReader.on('message', (message) => {
+            this.emitter.emit('message', message);
+        });
+
+        this.currentReader.on('finished', () => {
+            this.emitter.emit('finished');
+        });
+    }
+
+    stop(): void | Promise<void> {
+        this.controller.abort();
+        this.currentReader = null;
+    }
+
+    async destroy(): Promise<void> {
+        await this.client.destroy();
     }
 }
 

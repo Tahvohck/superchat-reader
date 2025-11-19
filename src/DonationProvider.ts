@@ -1,37 +1,64 @@
-import EventEmitter from 'node:events';
 import { CurrencyCodeRecord } from 'currency-codes';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
+import EventEmitter from 'node:events';
 
-export type DonationReaderEventMap = {
+export type DonationEventMap = {
     message: [DonationMessage];
     finished: [];
 };
 
-// DonationReaders only need to support `on("message", ...)` and `on("finished", ...)`, so we don't really want to
-// force them to implement the entire EventEmitter interface.
-export type EventEmitterListenOnly<T extends Record<keyof T, unknown[]>> = Pick<EventEmitter<T>, 'on'>;
+export function splitEmitter<T extends Record<string, unknown[]>>(emitter: EventEmitter<T>) {
+    return [
+        new EventEmitterOnly<T>(emitter),
+        new EventListenerOnly<T>(emitter),
+    ] as const;
+}
 
-/**
- * A `DonationReader` represents a single stream of donation events that can be invalidated at any point.
- * See {@link DonationProvider.createReader | createReader} for more info.
- */
-export interface DonationReader extends EventEmitterListenOnly<DonationReaderEventMap> {}
+export type DonationEventEmitter = EventEmitterOnly<DonationEventMap>;
+export type DonationEventListener = EventListenerOnly<DonationEventMap>;
 
-/**
- * Entry type of a platform module that sticks around for the entire program's duration. Ideally this should be dependency-free.
- */
-export interface DonationProvider<T extends DonationReader = DonationReader> {
+class EventListenerOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
+    constructor(private readonly emitter: EventEmitter<T>) {}
+
+    public on<K extends keyof T>(event: K, listener: (...args: T[K]) => void): this {
+        //deno-lint-ignore no-explicit-any
+        this.emitter.on(event as any, listener as any);
+        return this;
+    }
+
+    public off<K extends keyof T>(event: K, listener: (...args: T[K]) => void): this {
+        //deno-lint-ignore no-explicit-any
+        this.emitter.off(event as any, listener as any);
+        return this;
+    }
+}
+
+class EventEmitterOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
+    constructor(private readonly emitter: EventEmitter<T>) {}
+
+    public emit<K extends keyof T>(event: K, ...args: T[K]): boolean {
+        //deno-lint-ignore no-explicit-any
+        return this.emitter.emit(event as any, ...args as any);
+    }
+}
+
+export interface DonationProvider {
     readonly id: string;
     readonly version: string;
     readonly name: string;
     /**
-     * Create a reader according to the current state of the provider. If the state of the provider changes (i.e., settings are changed),
-     * this function may be called again.
-     * @param signal tells the reader to stop processing messages. This can either happen when the program shuts down, the user stops all readers, or configuration is rebuilt.
+     * Called *once* at program startup to initialize the provider.
+     * @param configuration register configuration options here.
+     * @param emitter emit message donation events here. You likely want to store this emitter for later use. It is only valid to emit events after `start` has been called.
      */
-    createReader(signal: AbortSignal): T | Promise<T>;
-    init?(configurator: ConfigurationBuilder): void | Promise<void>;
+    init(configuration: ConfigurationBuilder, emitter: DonationEventEmitter): void | Promise<void>;
+    start(): void | Promise<void>;
+    stop(): void | Promise<void>;
+    /**
+     * Called when the provider is being destroyed, either at program exit or when the provider is being unloaded.
+     */
+    destroy?(): void | Promise<void>;
 }
 
 export type MessageType = 'text' | 'image';

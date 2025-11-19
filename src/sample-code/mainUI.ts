@@ -1,4 +1,3 @@
-// FIXME: rewrite for provider rework!
 import { WebUI } from 'https://deno.land/x/webui@2.5.3/mod.ts';
 import UISnippets from '@app/UISnippets/dir.ts';
 import { ProviderManager } from '@app/ProviderManager.ts';
@@ -33,9 +32,7 @@ democonfig.bind(mainWindow);
 mainWindow.setSize(800, 400);
 await mainWindow.show(mainWindowHtml);
 
-const stream = manager.getStream();
-
-stream.on('message', async (message) => {
+manager.on('message', async (message) => {
     if (!mainWindow.isShown) return;
     if (message.messageType === 'text') {
         await mainWindow.script(`
@@ -61,8 +58,8 @@ stream.on('message', async (message) => {
     }
 });
 
-await stream.start();
+await manager.startEnabled();
 
 await WebUI.wait();
 
-stream.abort();
+await manager.stopAll();
