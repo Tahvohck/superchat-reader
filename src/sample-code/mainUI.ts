@@ -62,4 +62,5 @@ await manager.startEnabled();
 
 await WebUI.wait();
 
-await manager.stopAll();
+WebUI.clean();
+await manager.destroy();

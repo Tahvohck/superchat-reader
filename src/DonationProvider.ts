@@ -1,59 +1,39 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
-import EventEmitter from 'node:events';
+import { EventEmitterOnly, EventListenerOnly } from './util.ts';
 
 export type DonationEventMap = {
     message: [DonationMessage];
     finished: [];
 };
 
-export function splitEmitter<T extends Record<string, unknown[]>>(emitter: EventEmitter<T>) {
-    return [
-        new EventEmitterOnly<T>(emitter),
-        new EventListenerOnly<T>(emitter),
-    ] as const;
-}
-
 export type DonationEventEmitter = EventEmitterOnly<DonationEventMap>;
 export type DonationEventListener = EventListenerOnly<DonationEventMap>;
 
-class EventListenerOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
-    constructor(private readonly emitter: EventEmitter<T>) {}
-
-    public on<K extends keyof T>(event: K, listener: (...args: T[K]) => void): this {
-        //deno-lint-ignore no-explicit-any
-        this.emitter.on(event as any, listener as any);
-        return this;
-    }
-
-    public off<K extends keyof T>(event: K, listener: (...args: T[K]) => void): this {
-        //deno-lint-ignore no-explicit-any
-        this.emitter.off(event as any, listener as any);
-        return this;
-    }
-}
-
-class EventEmitterOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
-    constructor(private readonly emitter: EventEmitter<T>) {}
-
-    public emit<K extends keyof T>(event: K, ...args: T[K]): boolean {
-        //deno-lint-ignore no-explicit-any
-        return this.emitter.emit(event as any, ...args as any);
-    }
-}
-
 export interface DonationProvider {
+    /**
+     * A unique identifier for this provider.
+     */
     readonly id: string;
-    readonly version: string;
+    /**
+     * Human-readable name for this provider. This should be descriptive, but doesn't have to be unique.
+     */
     readonly name: string;
+    readonly version: string;
     /**
      * Called *once* at program startup to initialize the provider.
      * @param configuration register configuration options here.
      * @param emitter emit message donation events here. You likely want to store this emitter for later use. It is only valid to emit events after `start` has been called.
      */
     init(configuration: ConfigurationBuilder, emitter: DonationEventEmitter): void | Promise<void>;
+    /**
+     * Start listening for donations. After this is called, donation messages can be emitted via the emitter provided in {@link DonationProvider.init | init}
+     */
     start(): void | Promise<void>;
+    /**
+     * Stop listening for donations. After this is called, no further donation messages should be emitted.
+     */
     stop(): void | Promise<void>;
     /**
      * Called when the provider is being destroyed, either at program exit or when the provider is being unloaded.

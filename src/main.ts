@@ -28,7 +28,7 @@ let i = 0;
 manager.on('message', async (message) => {
     console.log(donationMessageToString(message));
     if (++i >= messageCap) {
-        await manager.stopAll();
+        await manager.destroy();
         console.log('----------------- END OF DEBUG -----------------');
     }
 });

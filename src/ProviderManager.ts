@@ -4,11 +4,11 @@ import {
     DonationEventMap,
     DonationMessage,
     DonationProvider,
-    splitEmitter,
 } from '@app/DonationProvider.ts';
 import { getProgramConfig, ProgramConfig } from '@app/MainConfig.ts';
 import { EventEmitter } from 'node:events';
 import { ConfigurationBuilder } from './ConfigurationBuilder.ts';
+import { forwardEvents, splitEmitter } from './util.ts';
 
 /**
  * Indicates that a requested provider was not registered.
@@ -33,6 +33,10 @@ export class ProviderNotEnabled extends Error {
  */
 // TODO: figure out semantics for enabling/disabling providers (at runtime).
 export class ProviderManager extends EventEmitter<{ message: [DonationMessage] }> {
+    async [Symbol.asyncDispose]() {
+        await this.destroy();
+    }
+
     private readonly providers = new Map<string, ProviderState>();
     private config!: ProgramConfig;
 
@@ -131,6 +135,13 @@ export class ProviderManager extends EventEmitter<{ message: [DonationMessage] }
     public getConfiguration(provider: string): ConfigurationBuilder | undefined {
         return this.providers.get(provider)?.configuration;
     }
+
+    public async destroy(): Promise<void> {
+        await this.stopAll();
+        for (const provider of this.providers.values()) {
+            await provider.provider.destroy?.();
+        }
+    }
 }
 
 export class AlreadyStartedError extends Error {
@@ -153,9 +164,7 @@ export class ProviderState {
     public readonly configuration: ConfigurationBuilder = new ConfigurationBuilder();
     private readonly listener: DonationEventListener;
     private readonly emitter: DonationEventEmitter;
-    private readonly callback = (message: DonationMessage) => {
-        this.manager.emit('message', message);
-    };
+    private callbacks?: Record<string, (...args: unknown[]) => void>;
 
     public get started() {
         return this._started;
@@ -176,7 +185,11 @@ export class ProviderState {
             throw new AlreadyStartedError(this.provider.id);
         }
 
-        this.listener.on('message', this.callback);
+        this.callbacks = forwardEvents(
+            this.listener,
+            this.manager,
+            ['message'],
+        ) as Record<string, (...args: unknown[]) => void>;
 
         await this.provider.start();
         this._started = true;
@@ -188,7 +201,10 @@ export class ProviderState {
         }
 
         await this.provider.stop();
-        this.listener.off('message', this.callback);
+        for (const [event, callback] of Object.entries(this.callbacks ?? {})) {
+            this.listener.off(event as keyof DonationEventMap, callback);
+        }
+        this.callbacks = undefined;
         this._started = false;
     }
 }
