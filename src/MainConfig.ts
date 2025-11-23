@@ -18,7 +18,7 @@ enum LogLevel {
 
 const MIN_WIDTH = Symbol('MIN WIDTH');
 const MIN_HEIGHT = Symbol('MIN HEIGHT');
-class ProgramConfig extends SavedConfig {
+export class ProgramConfig extends SavedConfig {
     [SAVE_PATH] = 'mainConfig.json';
     readonly [MIN_HEIGHT] = 400;
     readonly [MIN_WIDTH] = 600;

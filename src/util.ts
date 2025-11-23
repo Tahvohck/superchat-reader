@@ -1,3 +1,5 @@
+import EventEmitter from 'node:events';
+
 export const sleep = (ms: number): Promise<void> => {
     return new Promise((res) => setTimeout(res, ms));
 };
@@ -5,61 +7,84 @@ export const sleep = (ms: number): Promise<void> => {
 // deno-lint-ignore no-explicit-any
 export type Constructor<T> = new (...args: any[]) => T;
 
-/**
- * Combines multiple async iterables into one, while also allowing you to remove or add iterables during use.
- * When any iterable is exhausted, it is automatically removed. When there are no more iterables to process. the iterator ends.
- */
-export class Combine<T> implements AsyncIterable<T> {
-    async *[Symbol.asyncIterator](): AsyncGenerator<T> {
-        const promises = new Map();
-
-        for (const [key, iterator] of this.iterables.entries()) {
-            promises.set(key, iterator.next().then((result) => [key, result]));
-        }
-        while (promises.size > 0) {
-            const iterables = new Set(this.iterables.keys());
-            for (const iteratorId of promises.keys()) {
-                iterables.delete(iteratorId);
-            }
-
-            if (iterables.size > 0) {
-                for (const iteratorId of iterables) {
-                    promises.set(
-                        iteratorId,
-                        this.iterables.get(iteratorId)!.next().then((result) => [iteratorId, result]),
-                    );
-                }
-            }
-
-            const [iteratorId, result] = await Promise.race(promises.values());
-            promises.delete(iteratorId);
-
-            // we only want to yield items for iterators we still care about, and we only want to yield actual items.
-            // the most common case for a value being undefined is a generator function that does not have a return statement,
-            // so we special case that but don't care about other `undefined` values.
-            if ((!result.done && result.value !== undefined) && this.iterables.has(iteratorId)) {
-                yield result.value;
-                promises.set(iteratorId, this.iterables.get(iteratorId)!.next().then((result) => [iteratorId, result]));
-            }
-
-            // a `return` in a generator function yields whatever is return with done: true, so we handle
-            // the value *before* removing the iterator.
-            if (result.done) {
-                this.remove(iteratorId);
-            }
-        }
+export class AbortableEventEmitter<T extends Record<keyof T, unknown[]>> extends EventEmitter<T> {
+    constructor(protected readonly signal: AbortSignal) {
+        super();
     }
+}
 
-    private readonly iterables: Map<string, AsyncIterator<T>> = new Map();
+export type DefaultEvents = {
+    // deno-lint-ignore no-explicit-any
+    error: [any];
+};
 
-    public add(key: string, iterable: AsyncIterator<T>): this {
-        this.iterables.set(key, iterable);
+export class EventListenerOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
+    constructor(private readonly emitter: EventEmitter<T>) {}
+
+    public on<K extends keyof (T & DefaultEvents)>(
+        event: K,
+        listener: (...args: (T & DefaultEvents)[K]) => void,
+    ): this {
+        //deno-lint-ignore no-explicit-any
+        this.emitter.on(event as any, listener as any);
         return this;
     }
 
-    public remove(key: string): AsyncIterator<T> | undefined {
-        const iterable = this.iterables.get(key);
-        this.iterables.delete(key);
-        return iterable;
+    public off<K extends keyof (T & DefaultEvents)>(
+        event: K,
+        listener: (...args: (T & DefaultEvents)[K]) => void,
+    ): this {
+        //deno-lint-ignore no-explicit-any
+        this.emitter.off(event as any, listener as any);
+        return this;
     }
+}
+
+export class EventEmitterOnly<T extends Record<string, unknown[]> = Record<string, unknown[]>> {
+    constructor(private readonly emitter: EventEmitter<T>) {}
+
+    public emit<K extends keyof (T & DefaultEvents)>(event: K, ...args: (T & DefaultEvents)[K]): boolean {
+        //deno-lint-ignore no-explicit-any
+        return this.emitter.emit(event as any, ...args as any);
+    }
+}
+
+/**
+ * Splits an {@link EventEmitter} into an emitter-only and listener-only part.
+ */
+export function splitEmitter<T extends Record<string, unknown[]>>(emitter: EventEmitter<T>) {
+    return [
+        new EventEmitterOnly<T>(emitter),
+        new EventListenerOnly<T>(emitter),
+    ] as const;
+}
+
+/**
+ * Forward events from one emitter to another.
+ * @returns An object mapping event names to the registered callback functions for use with {@link EventEmitter.off} on the source.
+ */
+// the typings here are incredibly messy, but fixing that would require redoing all the EventEmitter typings in the split versions above, which is not worth the effort right now.
+export function forwardEvents<
+    E1 extends Record<string | number | symbol, unknown[]>,
+    E2 extends Record<string | number | symbol, unknown[]>,
+    A extends ((keyof E1 & keyof E2) | 'error')[],
+>(
+    source: EventEmitter<E1> | EventListenerOnly<E1>,
+    target: EventEmitter<E2> | EventEmitterOnly<E2>,
+    events: A,
+): { [K in A[number]]: (...args: unknown[]) => void } {
+    const callbacks = {} as { [K in A[number]]: (...args: unknown[]) => void };
+
+    for (const event of events) {
+        const callback = (...args: E1[typeof event]) => {
+            // deno-lint-ignore no-explicit-any -- EventEmitter typings are a little funky.
+            (target.emit as any)(event as any, ...args as any);
+        };
+
+        // deno-lint-ignore no-explicit-any
+        (source.on as any)(event as any, callback as any);
+        callbacks[event] = callback as unknown as (...args: unknown[]) => void;
+    }
+
+    return callbacks;
 }

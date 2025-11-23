@@ -1,20 +1,44 @@
 import { CurrencyCodeRecord } from 'currency-codes';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
 import { LocallyCachedImage } from '@app/ImageCache.ts';
+import { EventEmitterOnly, EventListenerOnly } from './util.ts';
+
+export type DonationEventMap = {
+    message: [DonationMessage];
+    finished: [];
+};
+
+export type DonationEventEmitter = EventEmitterOnly<DonationEventMap>;
+export type DonationEventListener = EventListenerOnly<DonationEventMap>;
 
 export interface DonationProvider {
+    /**
+     * A unique identifier for this provider.
+     */
     readonly id: string;
+    /**
+     * Human-readable name for this provider. This should be descriptive, but doesn't have to be unique.
+     */
     readonly name: string;
     readonly version: string;
-    /** Activate the provider. Return value indicates success. */
-    activate(): Promise<boolean>;
-    /** Deactivate the provider. Return value indicates success. */
-    deactivate(): Promise<boolean>;
     /**
-     * Wait for new messages from the provider. Implemented via an ansynchronus generator style.
+     * Called *once* at program startup to initialize the provider.
+     * @param configuration register configuration options here.
+     * @param emitter emit message donation events here. You likely want to store this emitter for later use. It is only valid to emit events after `start` has been called.
      */
-    process(): AsyncGenerator<DonationMessage>;
-    configure(cb: ConfigurationBuilder): void;
+    init(configuration: ConfigurationBuilder, emitter: DonationEventEmitter): void | Promise<void>;
+    /**
+     * Start listening for donations. After this is called, donation messages can be emitted via the emitter provided in {@link DonationProvider.init | init}
+     */
+    start(): void | Promise<void>;
+    /**
+     * Stop listening for donations. After this is called, no further donation messages should be emitted.
+     */
+    stop(): void | Promise<void>;
+    /**
+     * Called when the provider is being destroyed, either at program exit or when the provider is being unloaded.
+     */
+    destroy?(): void | Promise<void>;
 }
 
 export type MessageType = 'text' | 'image';

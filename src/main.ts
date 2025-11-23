@@ -1,8 +1,9 @@
 import { DemoProvider } from '@app/chat_providers/Demo.ts';
-import { YouTubeDonationProvider } from '@app/chat_providers/youtube/YouTubeProvider.ts';
+import { YouTubeProvider } from '@app/chat_providers/youtube/YouTubeProvider.ts';
 import { ProviderManager } from '@app/ProviderManager.ts';
 import { loadCCCache } from '@app/CurrencyConversion.ts';
 import { getProgramConfig } from '@app/MainConfig.ts';
+import { donationMessageToString } from './DonationProvider.ts';
 
 await loadCCCache();
 
@@ -12,12 +13,10 @@ const config = await getProgramConfig();
 await manager.init();
 
 if (config.debug) {
-    manager.register(new DemoProvider());
+    await manager.register(new DemoProvider());
 } else {
-    manager.register(new YouTubeDonationProvider());
+    await manager.register(new YouTubeProvider());
 }
-
-await manager.activateAll();
 
 const messageCap = 10;
 
@@ -26,14 +25,12 @@ console.log(`Printing ${messageCap} total debug messages.`);
 console.log('---------------- DEBUG MESSAGES ----------------');
 
 let i = 0;
-for await (const message of manager.readAll()) {
-    if (i++ > messageCap) break;
-    if (message.messageType !== 'text') continue;
-    console.log(
-        `${message.author} (${message.donationCurrency.code} ${
-            message.donationAmount.toFixed(message.donationCurrency.digits)
-        } | ${message.donationClass}): ${message.message}`,
-    );
-}
+manager.on('message', async (message) => {
+    console.log(donationMessageToString(message));
+    if (++i >= messageCap) {
+        await manager.destroy();
+        console.log('----------------- END OF DEBUG -----------------');
+    }
+});
 
-console.log('Program complete');
+await manager.startEnabled();

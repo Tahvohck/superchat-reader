@@ -1,88 +1,54 @@
+import { DonationClass, DonationEventEmitter, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
 import { ConfigurationBuilder } from '@app/ConfigurationBuilder.ts';
-import { DonationClass, DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
 import { SAVE_PATH, SavedConfig } from '@app/SavedConfig.ts';
-import { sleep } from '@app/util.ts';
 import generateWords from '@biegomar/lorem';
 import { code } from 'currency-codes';
 
 export class DemoProvider implements DonationProvider {
-    readonly id = 'demo';
-    readonly name = 'Demo Provider';
-    readonly version = '1.0';
+    public readonly id = 'demo';
+    public readonly name = 'Demo Provider';
+    public readonly version = '1.0';
 
-    messages: DonationMessage[] = [];
-    active = false;
-    immediateMessage = false;
+    private config!: DemoConfig;
+    private emitter!: DonationEventEmitter;
 
-    config!: DemoConfig;
+    private interval: number | null = null;
 
-    async activate() {
+    private generateMessage() {
+        const message: DonationMessage = {
+            author: this.config.demoUsername,
+            message: generateWords(
+                this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords)),
+            ),
+            donationClass: DonationClass.Blue,
+            donationCurrency: code('USD')!, // USD currency exists, this will never be undefined
+            donationAmount: 0,
+            messageType: 'text',
+        };
+
+        // Generate a random amount and truncate it to the correct digit count
+        message.donationAmount = Math.random() * 100 *
+            10 ** message.donationCurrency.digits;
+        message.donationAmount = Math.floor(message.donationAmount);
+        message.donationAmount /= 10 ** message.donationCurrency.digits;
+
+        return message;
+    }
+
+    private startMessages() {
+        this.interval = setInterval(() => {
+            this.emitter.emit('message', this.generateMessage());
+        }, this.config.delay);
+    }
+
+    async init(configBuilder: ConfigurationBuilder, emitter: DonationEventEmitter) {
         this.config = await SavedConfig.getOrCreate(DemoConfig);
-        console.log(
-            `Username: ${this.config.demoUsername}\n` +
-                `Will generate between ${this.config.minWords} and ${this.config.maxWords} words.`,
-        );
-        this.active = true;
-        console.log('Demo provider activated');
-        return Promise.resolve(true);
-    }
+        this.emitter = emitter;
 
-    deactivate() {
-        this.active = false;
-        console.log('Demo provider deactivated');
-        return Promise.resolve(true);
-    }
-
-    async *process() {
-        while (this.active) {
-            let sleptfor = 0;
-            // Keep looping until: immediate message requested OR
-            // constant stream is enabled and we've slept long enough
-            while (!this.immediateMessage && (!this.config.constantStream || sleptfor < this.config.delay)) {
-                await sleep(250);
-                sleptfor += 250;
-            }
-            if (!this.active) {
-                return;
-            }
-            this.immediateMessage = false;
-            const message: DonationMessage = {
-                author: this.config.demoUsername,
-                message: generateWords(
-                    this.config.minWords + Math.floor(Math.random() * (this.config.maxWords - this.config.minWords)),
-                ),
-                donationClass: DonationClass.Blue,
-                donationCurrency: code('USD')!, // USD currency exists, this will never be undefined
-                donationAmount: 0,
-                messageType: 'text',
-            };
-
-            // Generate a random amount and truncate it to the correct digit count
-            message.donationAmount = Math.random() * 100 *
-                10 ** message.donationCurrency.digits;
-            message.donationAmount = Math.floor(message.donationAmount);
-            message.donationAmount /= 10 ** message.donationCurrency.digits;
-
-            yield message;
-        }
-    }
-
-    configure(cb: ConfigurationBuilder): void {
-        cb.addCheckbox(
-            'Enabled',
-            {
-                value: this.active,
-                callback: async (state) => {
-                    if (state && !this.active) {
-                        await this.activate();
-                    } else if (!state && this.active) {
-                        await this.deactivate();
-                    } else {
-                        console.warn(`Provider in weird state. check: ${state} state: ${this.active}`);
-                    }
-                },
-            },
-        ).addTextBox(
+        // This is not currently best practice as I see it.
+        // Ideally, with the provider rewrite, settings on readers should be static
+        // and instead config changes should just trigger construction of a brand new reader.
+        configBuilder.addTextBox(
             'Username',
             {
                 value: this.config.demoUsername,
@@ -131,16 +97,29 @@ export class DemoProvider implements DonationProvider {
                 value: this.config.delay,
                 callback: (newVal) => {
                     this.config.delay = newVal;
+                    clearInterval(this.interval ?? undefined);
+                    this.startMessages();
                 },
             },
         ).addButton(
             'Send message',
             {
                 callback: () => {
-                    this.immediateMessage = true;
+                    this.emitter.emit('message', this.generateMessage());
                 },
             },
         );
+    }
+
+    start(): void | Promise<void> {
+        this.startMessages();
+    }
+    stop(): void | Promise<void> {
+        clearInterval(this.interval ?? undefined);
+    }
+
+    destroy?(): void | Promise<void> {
+        clearInterval(this.interval ?? undefined);
     }
 }
 

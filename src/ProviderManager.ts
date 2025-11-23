@@ -1,6 +1,14 @@
-import { DonationMessage, DonationProvider } from '@app/DonationProvider.ts';
-import { Combine } from '@app/util.ts';
-import { getProgramConfig } from '@app/MainConfig.ts';
+import {
+    DonationEventEmitter,
+    DonationEventListener,
+    DonationEventMap,
+    DonationMessage,
+    DonationProvider,
+} from '@app/DonationProvider.ts';
+import { getProgramConfig, ProgramConfig } from '@app/MainConfig.ts';
+import { EventEmitter } from 'node:events';
+import { ConfigurationBuilder } from './ConfigurationBuilder.ts';
+import { forwardEvents, splitEmitter } from './util.ts';
 
 /**
  * Indicates that a requested provider was not registered.
@@ -12,112 +20,191 @@ export class ProviderNotFound extends Error {
 }
 
 /**
+ * Indicates that a requested provider is not enabled.
+ */
+export class ProviderNotEnabled extends Error {
+    constructor(id: string) {
+        super(`Provider with ID ${id} is not enabled.`);
+    }
+}
+
+/**
  * Central point for managing all chat providers.
  */
-export class ProviderManager {
-    private readonly providers = new Map<string, DonationProvider>();
-    private config!: Awaited<ReturnType<typeof getProgramConfig>>;
-    private combine = new Combine<DonationMessage>();
+// TODO: figure out semantics for enabling/disabling providers (at runtime).
+export class ProviderManager extends EventEmitter<{ message: [DonationMessage] }> {
+    async [Symbol.asyncDispose]() {
+        await this.destroy();
+    }
+
+    private readonly providers = new Map<string, ProviderState>();
+    private config!: ProgramConfig;
 
     public async init() {
         this.config = await getProgramConfig();
     }
 
-    public register(
+    private getProvider(providerId: string): ProviderState {
+        if (!this.providers.has(providerId)) {
+            throw new ProviderNotFound(providerId);
+        }
+        return this.providers.get(providerId)!;
+    }
+
+    /**
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
+     */
+    public toggle(providerId: string): boolean {
+        const { enabledProviders } = this.config;
+
+        if (!(providerId in enabledProviders)) {
+            throw new ProviderNotFound(providerId);
+        }
+
+        enabledProviders[providerId] = !enabledProviders[providerId];
+        return this.config.enabledProviders[providerId];
+    }
+
+    /**
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
+     */
+    public isEnabled(providerId: string): boolean {
+        if (!(providerId in this.config.enabledProviders)) {
+            throw new ProviderNotFound(providerId);
+        }
+        return this.config.enabledProviders[providerId];
+    }
+
+    public async register(
         provider: DonationProvider,
     ) {
         if (this.providers.has(provider.id)) {
             throw new Error(`Provider ${provider.name} (${provider.id}) already registered.`);
         }
+
         // if we find a new provider, assume we want it enabled by default.
-        if (!this.config.enabledProviders[provider.id]) this.config.enabledProviders[provider.id] = true;
-        this.providers.set(provider.id, provider);
-    }
-
-    /**
-     * Activate the provider with the given ID.
-     * @param id provider to activate
-     * @returns true if activation was successful, false otherwise
-     * @throws {ProviderNotFound} If the provider with the given ID does not exist.
-     */
-    public async activate(id: string): Promise<boolean> {
-        const provider = this.providers.get(id);
-        if (!provider) {
-            throw new ProviderNotFound(id);
+        if (typeof this.config.enabledProviders[provider.id] !== 'boolean') {
+            this.config.enabledProviders[provider.id] = true;
         }
 
-        const success = await provider.activate();
-        if (success) {
-            this.combine.add(id, provider.process());
-        }
-        return success;
+        const data = new ProviderState(this, provider);
+        await data.init();
+        this.providers.set(provider.id, data);
     }
 
-    /**
-     * Activate all providers that should be active according to the config.
-     */
-    public async activateAll() {
-        for (const provider of this.getActiveProviderIds()) {
-            try {
-                const success = await this.activate(provider);
-                if (!success) {
-                    console.error(`Failed to activate provider ${provider}.`);
-                }
-            } catch (error) {
-                if (!(error instanceof ProviderNotFound)) {
-                    throw error;
-                }
-
-                console.warn(`Provider with ID ${provider} not found. Skipping.`);
+    private getEnabledProviders() {
+        const providers = [];
+        for (const provider of this.providers.values()) {
+            if (this.config.enabledProviders[provider.provider.id]) {
+                providers.push(provider);
             }
         }
+        return providers;
     }
 
     /**
-     * Deactivate the provider with the given ID.
-     * @param id provider to deactivate
-     * @returns true if deactivation was successful, false otherwise
-     * @throws {ProviderNotFound} If the provider with the given ID does not exist.
+     * Start a provider.
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
      */
-    public async deactivate(id: string): Promise<boolean> {
-        const provider = this.providers.get(id);
-        if (!provider) {
-            throw new ProviderNotFound(id);
-        }
-        this.config.enabledProviders[id] = false;
-        this.combine.remove(id);
-        return await provider.deactivate();
+    public async start(providerId: string): Promise<void> {
+        const provider = this.getProvider(providerId);
+        await provider.start();
     }
 
-    /**
-     * Deactivate all currently active providers.
-     */
-    public async deactivateAll() {
-        for (const provider of this.getActiveProviderIds()) {
-            try {
-                const success = await this.deactivate(provider);
-                if (!success) {
-                    console.error(`Failed to deactivate provider ${provider}.`);
-                }
-            } catch (error) {
-                if (!(error instanceof ProviderNotFound)) {
-                    throw error;
-                }
-
-                console.warn(`Provider with ID ${provider} not found. Skipping.`);
-            }
+    public async startEnabled(): Promise<void> {
+        for (const provider of this.getEnabledProviders()) {
+            await provider.start();
         }
     }
 
-    public getActiveProviderIds(): string[] {
-        return Object.entries(this.config.enabledProviders).filter(([_, isActive]) => isActive).map(([id, _]) => id);
+    /**
+     * Stop a provider.
+     * @throws {ProviderNotFound} if the supplied provider isn't {@link ProviderManager.register | register}ed.
+     */
+    public async stop(providerId: string): Promise<void> {
+        const provider = this.getProvider(providerId);
+        await provider.stop();
     }
 
-    /**
-     * Read all donation messages from all active providers. If a provider is activated/deactivated while
-     * reading, the stream will be updated automatically.
-     */
-    public readAll(): Combine<DonationMessage> {
-        return this.combine;
+    public async stopAll(): Promise<void> {
+        for (const provider of this.providers.values().filter((p) => p.started)) {
+            await provider.stop();
+        }
+    }
+
+    public getConfiguration(provider: string): ConfigurationBuilder | undefined {
+        return this.providers.get(provider)?.configuration;
+    }
+
+    public async destroy(): Promise<void> {
+        await this.stopAll();
+        for (const provider of this.providers.values()) {
+            await provider.provider.destroy?.();
+        }
+    }
+}
+
+export class AlreadyStartedError extends Error {
+    constructor(providerId: string) {
+        super(`Provider with ID ${providerId} has already been started.`);
+    }
+}
+
+export class NotStartedError extends Error {
+    constructor(providerId: string) {
+        super(`Provider with ID ${providerId} has not been started.`);
+    }
+}
+
+/**
+ * Holds state for a registered provider. This automatically manages event forwarding and start/stop state.
+ */
+export class ProviderState {
+    private _started: boolean = false;
+    public readonly configuration: ConfigurationBuilder = new ConfigurationBuilder();
+    private readonly listener: DonationEventListener;
+    private readonly emitter: DonationEventEmitter;
+    private callbacks?: Record<string, (...args: unknown[]) => void>;
+
+    public get started() {
+        return this._started;
+    }
+
+    constructor(private readonly manager: ProviderManager, public readonly provider: DonationProvider) {
+        const [emitter, listener] = splitEmitter(new EventEmitter<DonationEventMap>());
+        this.emitter = emitter;
+        this.listener = listener;
+    }
+
+    public async init() {
+        return await this.provider.init(this.configuration, this.emitter);
+    }
+
+    public async start() {
+        if (this._started) {
+            throw new AlreadyStartedError(this.provider.id);
+        }
+
+        this.callbacks = forwardEvents(
+            this.listener,
+            this.manager,
+            ['message'],
+        ) as Record<string, (...args: unknown[]) => void>;
+
+        await this.provider.start();
+        this._started = true;
+    }
+
+    public async stop() {
+        if (!this._started) {
+            throw new NotStartedError(this.provider.id);
+        }
+
+        await this.provider.stop();
+        for (const [event, callback] of Object.entries(this.callbacks ?? {})) {
+            this.listener.off(event as keyof DonationEventMap, callback);
+        }
+        this.callbacks = undefined;
+        this._started = false;
     }
 }
